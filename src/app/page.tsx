@@ -138,7 +138,7 @@ export default async function HomePage() {
           )}
 
           {mine?.status === "confirmed" && game && (
-            <Card tone="dark" className="relative flex flex-col gap-4 overflow-hidden">
+            <Card tone="dark" className="flex flex-col gap-4">
               <ClaimCelebration gameId={game.id} accountId={account.id} />
               <div className="flex items-center gap-[18px]">
                 <Ring fraction={confirmed.length / cap} size={96} thickness={9}>
