@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Bebas_Neue } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -40,6 +42,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto flex h-dvh w-full max-w-[440px] flex-col overflow-hidden bg-cream md:my-6 md:h-[calc(100dvh-3rem)] md:rounded-[28px] md:shadow-2xl md:shadow-navy/30">
           {children}
         </div>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
