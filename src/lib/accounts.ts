@@ -3,7 +3,7 @@ import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import type { RankedTier } from "@/lib/tiers";
 
-const ACCOUNT_FIELDS =
+export const ACCOUNT_FIELDS =
   "id, name, first_name, last_name, phone, password_hash, is_admin, tier, fantasy_member, created_at";
 
 export type Account = {

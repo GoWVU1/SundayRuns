@@ -11,7 +11,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Card } from "@/components/Card";
 import { Ring } from "@/components/Ring";
-import { PillButton, TagButton } from "@/components/Button";
+import { PillSubmitButton, TagSubmitButton } from "@/components/SubmitButton";
 import { RosterRow } from "@/components/RosterRow";
 import { PushOptIn } from "@/components/PushOptIn";
 import { ClaimCelebration } from "@/components/ClaimCelebration";
@@ -90,9 +90,6 @@ export default async function HomePage() {
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
                 {game.address && <span className="text-[11px] text-muted-navy/80">{game.address}</span>}
               </div>
-              <div className="mt-3">
-                <AddToCalendar game={game} />
-              </div>
               <div className="my-4 h-px bg-gold/20" />
               <span className="font-display text-lg tracking-wide text-gold">
                 YOUR WINDOW OPENS {windowOpensAt ? formatUnlockLabel(windowOpensAt) : "SOON"}
@@ -118,9 +115,6 @@ export default async function HomePage() {
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
                 {game.address && <span className="text-[11px] text-muted-navy/80">{game.address}</span>}
               </div>
-              <div className="mt-3">
-                <AddToCalendar game={game} />
-              </div>
               <div className="my-4 h-px bg-gold/20" />
               <div className="flex items-center gap-5">
                 <Ring fraction={confirmed.length / cap} size={132} thickness={12}>
@@ -140,7 +134,7 @@ export default async function HomePage() {
               </div>
               <form action={claimSpotAction} className="mt-[18px]">
                 <input type="hidden" name="gameId" value={game.id} />
-                <PillButton type="submit">{isFull ? "JOIN WAITLIST" : "CLAIM MY SPOT"}</PillButton>
+                <PillSubmitButton>{isFull ? "JOIN WAITLIST" : "CLAIM MY SPOT"}</PillSubmitButton>
               </form>
               <div className="mt-2.5 text-center text-[11px] text-muted-navy">
                 You&apos;re a <strong className="text-gold">{tierLabel}</strong> member
@@ -178,9 +172,7 @@ export default async function HomePage() {
                 <span className="text-xs text-muted-navy">Can&apos;t make it anymore?</span>
                 <form action={cancelRsvpAction}>
                   <input type="hidden" name="gameId" value={game.id} />
-                  <TagButton variant="danger" type="submit">
-                    GIVE UP MY SPOT
-                  </TagButton>
+                  <TagSubmitButton variant="danger">GIVE UP MY SPOT</TagSubmitButton>
                 </form>
               </div>
             </Card>
@@ -195,12 +187,11 @@ export default async function HomePage() {
               <span className="text-xs leading-relaxed text-muted-navy">
                 Game is full at {cap}. First to respond when a spot opens gets it.
               </span>
-              <AddToCalendar game={game} />
               <form action={cancelRsvpAction}>
                 <input type="hidden" name="gameId" value={game.id} />
-                <TagButton variant="danger" type="submit" className="mt-1">
+                <TagSubmitButton variant="danger" className="mt-1">
                   LEAVE WAITLIST
-                </TagButton>
+                </TagSubmitButton>
               </form>
             </Card>
           )}

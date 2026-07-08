@@ -51,6 +51,7 @@ export default async function NewGamePage({
               defaultLocation={chosen?.location ?? ""}
               defaultAddress={chosen?.address ?? ""}
               defaultCap={chosen?.cap ?? 16}
+              defaultIsOpen={true}
               defaultVisibility={chosen?.visibility ?? "standard"}
               defaultVisibleTiers={chosen?.visible_tiers ?? []}
               defaultVisibleAccountIds={[]}

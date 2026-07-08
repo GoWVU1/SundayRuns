@@ -170,6 +170,7 @@ type GameFormFields = {
   location: string;
   address: string;
   cap: number;
+  isOpen: boolean;
   visibility: GameVisibility;
   visibleTiers?: RankedTier[];
   visibleAccountIds?: string[];
@@ -197,8 +198,8 @@ async function writeAllowlist(tx: TransactionSql, gameId: string, fields: GameFo
 export async function createGame(fields: GameFormFields & { createdBy: string }): Promise<Game> {
   return sql.begin(async (tx) => {
     const rows = await tx<Game[]>`
-      insert into games (starts_at, location, address, cap, visibility, created_by)
-      values (${fields.startsAt.toISOString()}, ${fields.location}, ${fields.address}, ${fields.cap}, ${fields.visibility}, ${fields.createdBy})
+      insert into games (starts_at, location, address, cap, is_open, visibility, created_by)
+      values (${fields.startsAt.toISOString()}, ${fields.location}, ${fields.address}, ${fields.cap}, ${fields.isOpen}, ${fields.visibility}, ${fields.createdBy})
       returning ${sql.unsafe(GAME_FIELDS)}
     `;
     const game = rows[0];
@@ -216,6 +217,7 @@ export async function updateGame(id: string, fields: GameFormFields): Promise<Ga
         location = ${fields.location},
         address = ${fields.address},
         cap = ${fields.cap},
+        is_open = ${fields.isOpen},
         visibility = ${fields.visibility}
       where id = ${id}
       returning ${sql.unsafe(GAME_FIELDS)}

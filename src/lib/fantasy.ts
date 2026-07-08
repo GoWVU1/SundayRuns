@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { sql } from "@/lib/db";
 
 export const PUNISHMENTS = [
@@ -46,15 +47,16 @@ async function getLatestStandingsYear(): Promise<number | null> {
  * The reigning champion's account_id, if the latest season's #1 finisher is linked
  * to a real account. Deliberately unrelated to fantasy_member — everyone on the
  * basketball roster sees the crown, not just other fantasy participants.
+ * Wrapped in cache() since Header and pages that render it both fetch this independently.
  */
-export async function getLatestChampionAccountId(): Promise<string | null> {
+export const getLatestChampionAccountId = cache(async (): Promise<string | null> => {
   const year = await getLatestStandingsYear();
   if (!year) return null;
   const [row] = await sql<{ account_id: string | null }[]>`
     select account_id from fantasy_standings where year = ${year} and place = 1
   `;
   return row?.account_id ?? null;
-}
+});
 
 const PLACE_LABEL: Record<number, string> = { 1: "Champion", 2: "Runner-Up", 3: "Third Place" };
 

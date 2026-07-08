@@ -1,12 +1,24 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { sql } from "@/lib/db";
-import type { Account } from "@/lib/accounts";
+import { ACCOUNT_FIELDS, type Account } from "@/lib/accounts";
 
 const SESSION_DAYS = 90;
 export const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "sr_session";
+
+/**
+ * ACCOUNT_FIELDS qualified with the `a` alias — sessions and accounts both have `id`/`created_at` columns.
+ * Computed lazily (not at module scope) since accounts.ts imports hashPassword from this module, and evaluating
+ * ACCOUNT_FIELDS at auth.ts's module-load time hits the TDZ mid-cycle.
+ */
+function qualifiedAccountFields(): string {
+  return ACCOUNT_FIELDS.split(", ")
+    .map((field) => `a.${field}`)
+    .join(", ");
+}
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
@@ -42,22 +54,26 @@ export async function destroySession() {
   jar.delete(COOKIE_NAME);
 }
 
-/** Shared by getSessionAccount() (Server Components/Actions) and proxy.ts (which reads request.cookies instead of next/headers). */
-export async function getAccountForToken(token: string | undefined): Promise<Account | null> {
+/**
+ * Shared by getSessionAccount() (Server Components/Actions) and proxy.ts (which reads request.cookies instead of
+ * next/headers). Wrapped in cache() so the many independent callers within one request/render pass (page +
+ * Header + nav, etc.) share a single query instead of each re-fetching the same account.
+ */
+export const getAccountForToken = cache(async (token: string | undefined): Promise<Account | null> => {
   if (!token) return null;
   const rows = await sql<Account[]>`
-    select a.id, a.name, a.phone, a.password_hash, a.is_admin, a.tier, a.fantasy_member, a.created_at
+    select ${sql.unsafe(qualifiedAccountFields())}
     from sessions s
     join accounts a on a.id = s.account_id
     where s.id = ${token} and s.expires_at > now()
   `;
   return rows[0] ?? null;
-}
+});
 
-export async function getSessionAccount(): Promise<Account | null> {
+export const getSessionAccount = cache(async (): Promise<Account | null> => {
   const jar = await cookies();
   return getAccountForToken(jar.get(COOKIE_NAME)?.value);
-}
+});
 
 /** Server Action guard: any logged-in account. Redirects to /login otherwise. */
 export async function requireAccount(): Promise<Account> {

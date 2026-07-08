@@ -30,6 +30,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
             defaultLocation={game.location}
             defaultAddress={game.address}
             defaultCap={game.cap}
+            defaultIsOpen={game.is_open}
             defaultVisibility={game.visibility}
             defaultVisibleTiers={allowlist.tiers}
             defaultVisibleAccountIds={allowlist.accountIds}

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
 import { normalizePhone } from "@/lib/accounts";
@@ -23,13 +24,14 @@ export async function setTierGuestAllowance(tier: RankedTier, monthlyAllowance: 
   `;
 }
 
-export async function canSponsorGuest(tier: string): Promise<boolean> {
+/** Wrapped in cache() since nav.ts and pages that render "invite a guest" both check this independently. */
+export const canSponsorGuest = cache(async (tier: string): Promise<boolean> => {
   if (!isRankedTier(tier)) return false;
   const [row] = await sql<{ monthly_allowance: number }[]>`
     select monthly_allowance from tier_guest_settings where tier = ${tier}
   `;
   return (row?.monthly_allowance ?? 0) > 0;
-}
+});
 
 /** "Only Hall of Fame and Veterans members" — built from whichever tiers currently have an allowance, not a fixed pair. */
 export async function getEligibleGuestSponsorLabel(): Promise<string> {

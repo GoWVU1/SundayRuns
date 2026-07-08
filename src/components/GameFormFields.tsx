@@ -7,6 +7,7 @@ export function GameFormFields({
   defaultLocation,
   defaultAddress,
   defaultCap,
+  defaultIsOpen,
   defaultVisibility,
   defaultVisibleTiers,
   defaultVisibleAccountIds,
@@ -16,6 +17,7 @@ export function GameFormFields({
   defaultLocation: string;
   defaultAddress: string;
   defaultCap: number;
+  defaultIsOpen: boolean;
   defaultVisibility: "standard" | "restricted";
   defaultVisibleTiers: RankedTier[];
   defaultVisibleAccountIds: string[];
@@ -37,6 +39,22 @@ export function GameFormFields({
         placeholder="123 Main St, Anytown, ST 12345"
       />
       <Field label="CAP" name="cap" type="number" min={1} max={50} defaultValue={defaultCap} required />
+
+      <label className="flex cursor-pointer items-center justify-between rounded-2xl border-[1.5px] border-navy/25 bg-cream p-3.5 has-[:checked]:border-navy has-[:checked]:bg-navy has-[:checked]:text-cream">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-extrabold tracking-wide">OPEN FOR RSVPS</span>
+          <span className="mt-0.5 block text-[10px] font-normal opacity-70">
+            Members can claim spots as soon as you save
+          </span>
+        </div>
+        <input
+          type="checkbox"
+          name="isOpen"
+          value="true"
+          defaultChecked={defaultIsOpen}
+          className="h-5 w-5 accent-gold"
+        />
+      </label>
 
       <div className="group flex flex-col gap-3">
         <label className="text-[10px] font-extrabold tracking-[2px] text-muted">VISIBILITY</label>

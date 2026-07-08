@@ -77,6 +77,7 @@ function readGameForm(formData: FormData) {
     location: String(formData.get("location") || ""),
     address: String(formData.get("address") || ""),
     cap,
+    isOpen: formData.get("isOpen") === "true",
     visibility,
     visibleTiers: formData.getAll("visibleTiers").map(String).filter(isRankedTier) as RankedTier[],
     visibleAccountIds: formData.getAll("visibleAccountIds").map(String),
