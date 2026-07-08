@@ -10,10 +10,12 @@ import {
   createGame,
   deleteGame,
   ensureStandardGame,
+  setTierUnlockOffset,
   toggleGameOpen,
   updateGame,
   updateGameTemplate,
   updateStandardGame,
+  windowToUnlockOffset,
   type GameVisibility,
 } from "@/lib/games";
 
@@ -99,6 +101,20 @@ export async function updateGameAction(formData: FormData) {
   await updateGame(gameId, fields);
   revalidateGameScreens();
   redirect("/admin/games");
+}
+
+export async function setTierUnlockOffsetAction(formData: FormData) {
+  await requireAdmin();
+  const tier = String(formData.get("tier") || "");
+  if (!isRankedTier(tier)) return;
+
+  const daysBefore = Number(formData.get("daysBefore")) || 0;
+  const [hh, mm] = String(formData.get("time") || "18:00").split(":").map(Number);
+  const timeMinutes = (hh || 0) * 60 + (mm || 0);
+
+  await setTierUnlockOffset(tier, windowToUnlockOffset(daysBefore, timeMinutes));
+  revalidatePath("/admin/games/windows");
+  revalidatePath("/");
 }
 
 export async function updateGameTemplateAction(formData: FormData) {

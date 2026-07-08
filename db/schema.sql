@@ -476,3 +476,19 @@ on conflict (slot) do nothing;
 -- the real mailing address, so calendar apps can drop a map pin on it.
 alter table games add column if not exists address text not null default '';
 alter table game_templates add column if not exists address text not null default '';
+
+-- ============================================================
+-- Stage I — admin-configurable tier signup windows
+-- ============================================================
+-- Minutes before kickoff each tier's signup window opens. Replaces the old
+-- hardcoded TIER_UNLOCK_OFFSET_MINUTES constant. Defaults reproduce the
+-- original schedule for a normal 6:00 PM kickoff: core = day before 5:00 PM
+-- (25h), regular = day of 10:30 AM (7.5h), extended = day of 1:00 PM (5h).
+create table if not exists tier_unlock_settings (
+  tier text primary key check (tier in ('core', 'regular', 'extended')),
+  offset_minutes int not null
+);
+
+insert into tier_unlock_settings (tier, offset_minutes) values
+  ('core', 1500), ('regular', 450), ('extended', 300)
+on conflict (tier) do nothing;

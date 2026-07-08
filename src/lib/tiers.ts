@@ -1,12 +1,9 @@
 export type RankedTier = "core" | "regular" | "extended";
 export type Tier = RankedTier | "guest";
 
-/** Minutes before a standard game's start time that each tier's signup window opens. */
-export const TIER_UNLOCK_OFFSET_MINUTES: Record<RankedTier, number> = {
-  core: 25 * 60, // Saturday 5:00 PM for a Sunday 6:00 PM game
-  regular: 7 * 60 + 30, // Sunday 10:30 AM
-  extended: 3 * 60 + 30, // Sunday 2:30 PM
-};
+// Per-tier signup-window unlock offsets are admin-configurable — see
+// getTierUnlockOffsets()/setTierUnlockOffset() in src/lib/games.ts, backed by
+// the tier_unlock_settings table.
 
 export const TIER_ORDER: RankedTier[] = ["core", "regular", "extended"];
 

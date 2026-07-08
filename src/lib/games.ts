@@ -2,8 +2,44 @@ import "server-only";
 import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
 import { nextSunday6pmUtc } from "@/lib/time";
-import { TIER_UNLOCK_OFFSET_MINUTES, isRankedTier, type RankedTier } from "@/lib/tiers";
+import { TIER_ORDER, isRankedTier, type RankedTier } from "@/lib/tiers";
 import type { Account } from "@/lib/accounts";
+
+/** 6:00 PM — the "normal Sunday game" every tier's signup window is calibrated against. */
+const REFERENCE_KICKOFF_MINUTE = 18 * 60;
+
+/** Per-tier minutes-before-kickoff a signup window opens — admin-editable via tier_unlock_settings. */
+export async function getTierUnlockOffsets(): Promise<Record<RankedTier, number>> {
+  const rows = await sql<{ tier: RankedTier; offset_minutes: number }[]>`
+    select tier, offset_minutes from tier_unlock_settings
+  `;
+  const byTier = Object.fromEntries(rows.map((r) => [r.tier, r.offset_minutes]));
+  return Object.fromEntries(TIER_ORDER.map((t) => [t, byTier[t] ?? 0])) as Record<RankedTier, number>;
+}
+
+export async function setTierUnlockOffset(tier: RankedTier, offsetMinutes: number): Promise<void> {
+  await sql`
+    insert into tier_unlock_settings (tier, offset_minutes)
+    values (${tier}, ${offsetMinutes})
+    on conflict (tier) do update set offset_minutes = ${offsetMinutes}
+  `;
+}
+
+/** A stored offset as "N days before kickoff, at HH:MM" — for prefilling the admin settings form. */
+export function unlockOffsetToWindow(offsetMinutes: number): { daysBefore: number; timeMinutes: number } {
+  let timeMinutes = REFERENCE_KICKOFF_MINUTE - offsetMinutes;
+  let daysBefore = 0;
+  while (timeMinutes < 0) {
+    timeMinutes += 24 * 60;
+    daysBefore += 1;
+  }
+  return { daysBefore, timeMinutes };
+}
+
+/** Inverse of unlockOffsetToWindow — what the admin settings form submits. */
+export function windowToUnlockOffset(daysBefore: number, timeMinutes: number): number {
+  return daysBefore * 24 * 60 + (REFERENCE_KICKOFF_MINUTE - timeMinutes);
+}
 
 export type GameVisibility = "standard" | "restricted";
 
@@ -62,7 +98,7 @@ async function fetchAllowlists(gameIds: string[]) {
  * games can be.
  */
 export async function getVisibleUpcomingGames(account: Account): Promise<GameVisibilityInfo[]> {
-  const games = await fetchCandidateGames();
+  const [games, unlockOffsets] = await Promise.all([fetchCandidateGames(), getTierUnlockOffsets()]);
   const restrictedIds = games.filter((g) => g.visibility === "restricted").map((g) => g.id);
   const allow = await fetchAllowlists(restrictedIds);
 
@@ -76,7 +112,7 @@ export async function getVisibleUpcomingGames(account: Account): Promise<GameVis
       if (!visible) continue;
       out.push({ game, windowOpensAt: null, isClaimable: game.is_open });
     } else {
-      const offsetMinutes = TIER_UNLOCK_OFFSET_MINUTES[rankedTier];
+      const offsetMinutes = unlockOffsets[rankedTier];
       const windowOpensAt = new Date(new Date(game.starts_at).getTime() - offsetMinutes * 60_000);
       out.push({ game, windowOpensAt, isClaimable: game.is_open && new Date() >= windowOpensAt });
     }

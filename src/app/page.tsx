@@ -94,9 +94,6 @@ export default async function HomePage() {
               <span className="font-display text-lg tracking-wide text-gold">
                 YOUR WINDOW OPENS {windowOpensAt ? formatUnlockLabel(windowOpensAt) : "SOON"}
               </span>
-              <span className="mt-1.5 block text-xs leading-relaxed text-muted-navy">
-                You&apos;re a {tierLabel} member — spots open in priority order.
-              </span>
             </Card>
           )}
 
