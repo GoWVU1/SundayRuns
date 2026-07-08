@@ -12,6 +12,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { TagButton } from "@/components/Button";
 import { PushOptIn } from "@/components/PushOptIn";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
+import { DeleteAccountForm } from "@/components/DeleteAccountForm";
 import { memberNavItems } from "@/lib/nav";
 import { logoutAction } from "@/app/actions/auth";
 
@@ -161,6 +162,8 @@ export default async function AccountPage() {
               SIGN OUT
             </TagButton>
           </form>
+
+          <DeleteAccountForm />
         </div>
       </main>
       <BottomNav items={await memberNavItems(account, "ACCOUNT")} />

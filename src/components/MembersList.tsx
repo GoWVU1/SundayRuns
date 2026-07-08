@@ -6,9 +6,11 @@ import { MemberRow, type PublicMember } from "@/components/MemberRow";
 export function MembersList({
   members,
   currentAccountId,
+  adminCount,
 }: {
   members: PublicMember[];
   currentAccountId: string;
+  adminCount: number;
 }) {
   const [query, setQuery] = useState("");
 
@@ -34,7 +36,7 @@ export function MembersList({
           <div className="px-3.5 py-4 text-center text-xs text-muted">No members match that search.</div>
         )}
         {filtered.map((m) => (
-          <MemberRow key={m.id} member={m} isSelf={m.id === currentAccountId} />
+          <MemberRow key={m.id} member={m} isSelf={m.id === currentAccountId} adminCount={adminCount} />
         ))}
       </div>
       <span className="text-center text-[11px] text-muted">

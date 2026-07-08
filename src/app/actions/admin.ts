@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { isRankedTier } from "@/lib/tiers";
 import {
+  countAdmins,
+  deleteAccount,
+  findAccountById,
   setAccountAdmin,
   setAccountFantasyMember,
   setAccountPassword,
@@ -52,5 +55,20 @@ export async function setFantasyMemberAction(formData: FormData) {
   const accountId = String(formData.get("accountId") || "");
   const fantasyMember = String(formData.get("fantasyMember") || "") === "true";
   await setAccountFantasyMember(accountId, fantasyMember);
+  revalidatePath("/admin/members");
+}
+
+export async function deleteAccountAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const accountId = String(formData.get("accountId") || "");
+  // Self-delete goes through the /account page instead, where you re-enter your password.
+  if (!accountId || accountId === admin.id) return;
+
+  const target = await findAccountById(accountId);
+  if (!target) return;
+  // Never leave the group with zero admins.
+  if (target.is_admin && (await countAdmins()) <= 1) return;
+
+  await deleteAccount(accountId);
   revalidatePath("/admin/members");
 }

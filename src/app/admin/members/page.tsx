@@ -23,6 +23,7 @@ export default async function AdminMembersPage() {
     tier: a.tier,
     fantasy_member: a.fantasy_member,
   }));
+  const adminCount = accounts.filter((a) => a.is_admin).length;
 
   return (
     <>
@@ -60,7 +61,7 @@ export default async function AdminMembersPage() {
             ))}
           </div>
 
-          <MembersList members={members} currentAccountId={account?.id ?? ""} />
+          <MembersList members={members} currentAccountId={account?.id ?? ""} adminCount={adminCount} />
         </div>
       </main>
       <BottomNav

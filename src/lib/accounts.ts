@@ -93,3 +93,20 @@ export async function countAccounts() {
   `;
   return Number(count);
 }
+
+export async function countAdmins() {
+  const [{ count }] = await sql<{ count: string }[]>`
+    select count(*)::text from accounts where is_admin = true
+  `;
+  return Number(count);
+}
+
+/**
+ * Cascades via FK constraints in db/schema.sql — sessions/rsvps/attendance/
+ * push_subscriptions/fantasy_dues are removed, games.created_by/rsvps.sponsor_
+ * account_id/fantasy_standings.account_id and similar historical references
+ * are set null rather than deleted, so past rosters and standings survive.
+ */
+export async function deleteAccount(accountId: string) {
+  await sql`delete from accounts where id = ${accountId}`;
+}

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  deleteAccountAction,
   resetPasswordAction,
   setAdminAction,
   setFantasyMemberAction,
@@ -9,6 +10,7 @@ import {
   type ResetPasswordState,
 } from "@/app/actions/admin";
 import { TagButton } from "@/components/Button";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { TIER_ORDER, TIER_LABELS } from "@/lib/tiers";
 
 export type PublicMember = {
@@ -28,8 +30,17 @@ async function callAction(action: (fd: FormData) => Promise<void>, fields: Recor
   await action(fd);
 }
 
-export function MemberRow({ member, isSelf }: { member: PublicMember; isSelf: boolean }) {
+export function MemberRow({
+  member,
+  isSelf,
+  adminCount,
+}: {
+  member: PublicMember;
+  isSelf: boolean;
+  adminCount: number;
+}) {
   const [state, formAction, pending] = useActionState(resetPasswordAction, initialState);
+  const isLastAdmin = member.is_admin && adminCount <= 1;
 
   return (
     <details className="border-b border-navy/10 last:border-b-0 [&_summary::-webkit-details-marker]:hidden">
@@ -111,6 +122,26 @@ export function MemberRow({ member, isSelf }: { member: PublicMember; isSelf: bo
             </span>
           )}
         </form>
+
+        {isSelf ? (
+          <span className="text-[11px] text-muted">Delete your own account from My Account instead.</span>
+        ) : (
+          <form action={deleteAccountAction}>
+            <input type="hidden" name="accountId" value={member.id} />
+            <ConfirmSubmitButton
+              confirmMessage={`Delete ${member.name}'s account? This can't be undone.`}
+              disabled={isLastAdmin}
+              className="w-full rounded-[10px] border border-danger px-3 py-2.5 text-xs font-extrabold tracking-wide text-danger disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              DELETE ACCOUNT
+            </ConfirmSubmitButton>
+            {isLastAdmin && (
+              <span className="mt-1 block text-[11px] text-muted">
+                Can&apos;t delete the only remaining admin.
+              </span>
+            )}
+          </form>
+        )}
       </div>
     </details>
   );
