@@ -5,27 +5,27 @@ export const PUNISHMENTS = [
   {
     key: "act_exam",
     name: "ACT Exam",
-    desc: "Retake the exam cold, no studying, and post the score to the group chat.",
+    desc: "Official paper ACT, cold — needs a 21+ composite (or a qualifying follow-up). Score reports go to the league.",
   },
   {
     key: "pacer_test",
     name: "FitnessGram PACER Test",
-    desc: "Run the beep test to failure, on camera, at the park.",
+    desc: "The beep test at a public park, cadence blasting on a speaker, until 75 laps — every attempt on video.",
   },
   {
     key: "waffle_house_24",
     name: "24 Hours in a Waffle House",
-    desc: "One full day, no leaving early, meals optional.",
+    desc: "24 straight hours in a Waffle House, livestreamed on Twitch — every waffle eaten knocks an hour off.",
   },
   {
     key: "hot_ones",
     name: "Hot Ones Challenge",
-    desc: "Full lineup, last sauce standing or bust.",
+    desc: "10 rounds of real Hot Ones sauces, each followed by league-submitted questions — full video required.",
   },
   {
     key: "bodybuilding_comp",
     name: "Bodybuilding Competition",
-    desc: "Enter a real local show and hit the stage.",
+    desc: "Register and compete in a real OCB/IFBB show — complete, unedited video of the competition required.",
   },
 ] as const;
 
@@ -40,6 +40,20 @@ export type StandingEntry = { place: number; name: string; payout_usd: string };
 async function getLatestStandingsYear(): Promise<number | null> {
   const [row] = await sql<{ year: number | null }[]>`select max(year) as year from fantasy_standings`;
   return row?.year ?? null;
+}
+
+/**
+ * The reigning champion's account_id, if the latest season's #1 finisher is linked
+ * to a real account. Deliberately unrelated to fantasy_member — everyone on the
+ * basketball roster sees the crown, not just other fantasy participants.
+ */
+export async function getLatestChampionAccountId(): Promise<string | null> {
+  const year = await getLatestStandingsYear();
+  if (!year) return null;
+  const [row] = await sql<{ account_id: string | null }[]>`
+    select account_id from fantasy_standings where year = ${year} and place = 1
+  `;
+  return row?.account_id ?? null;
 }
 
 export async function getLatestStandings(): Promise<{ year: number | null; standings: StandingEntry[] }> {

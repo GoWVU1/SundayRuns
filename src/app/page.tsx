@@ -4,6 +4,8 @@ import { getNextVisibleGame } from "@/lib/games";
 import { getRoster } from "@/lib/rsvps";
 import { formatGameDateTime, formatUnlockLabel } from "@/lib/time";
 import { TIER_LABELS, canSponsorGuest, isRankedTier } from "@/lib/tiers";
+import { getAttendanceStreaks } from "@/lib/attendance";
+import { getLatestChampionAccountId } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Card } from "@/components/Card";
@@ -11,6 +13,7 @@ import { Ring } from "@/components/Ring";
 import { PillButton, TagButton } from "@/components/Button";
 import { RosterRow } from "@/components/RosterRow";
 import { PushOptIn } from "@/components/PushOptIn";
+import { ClaimCelebration } from "@/components/ClaimCelebration";
 import { claimSpotAction, cancelRsvpAction } from "@/app/actions/rsvp";
 import { hasActiveSubscription } from "@/lib/push";
 import { memberNavItems } from "@/lib/nav";
@@ -30,6 +33,11 @@ export default async function HomePage() {
   const confirmed = roster.filter((r) => r.status === "confirmed");
   const waitlisted = roster.filter((r) => r.status === "waitlisted");
   const mine = roster.find((r) => r.account_id === account.id) ?? null;
+
+  const [streaks, championAccountId] = await Promise.all([
+    getAttendanceStreaks(confirmed.map((r) => r.account_id)),
+    getLatestChampionAccountId(),
+  ]);
 
   const cap = game?.cap ?? 16;
   const spotsLeft = Math.max(0, cap - confirmed.length);
@@ -130,7 +138,8 @@ export default async function HomePage() {
           )}
 
           {mine?.status === "confirmed" && game && (
-            <Card tone="dark" className="flex flex-col gap-4">
+            <Card tone="dark" className="relative flex flex-col gap-4 overflow-hidden">
+              <ClaimCelebration gameId={game.id} accountId={account.id} />
               <div className="flex items-center gap-[18px]">
                 <Ring fraction={confirmed.length / cap} size={96} thickness={9}>
                   <span className="font-display text-[22px] leading-none text-gold">
@@ -191,7 +200,15 @@ export default async function HomePage() {
               </div>
             )}
             {confirmed.map((p, i) => (
-              <RosterRow key={p.id} num={i + 1} name={p.name} tier={p.tier} sponsorName={p.sponsor_name} />
+              <RosterRow
+                key={p.id}
+                num={i + 1}
+                name={p.name}
+                tier={p.tier}
+                sponsorName={p.sponsor_name}
+                streak={streaks.get(p.account_id) ?? 0}
+                isChampion={p.account_id === championAccountId}
+              />
             ))}
           </div>
 

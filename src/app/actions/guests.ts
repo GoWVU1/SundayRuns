@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAccount, requireAdmin } from "@/lib/auth";
 import { assertGameVisible } from "@/lib/games";
-import { canSponsorGuest } from "@/lib/tiers";
+import { canSponsorGuest, TIER_LABELS } from "@/lib/tiers";
 import { approveGuestRequest, denyGuestRequest, requestGuestInvite } from "@/lib/guests";
 
 export type GuestRequestFormState = { error?: string; success?: boolean };
@@ -13,7 +13,8 @@ export async function submitGuestRequestAction(
   formData: FormData
 ): Promise<GuestRequestFormState> {
   const account = await requireAccount();
-  if (!canSponsorGuest(account.tier)) return { error: "Only Core and Regular members can invite guests." };
+  if (!canSponsorGuest(account.tier))
+    return { error: `Only ${TIER_LABELS.core} and ${TIER_LABELS.regular} members can invite guests.` };
 
   const gameId = String(formData.get("gameId") || "");
   const guestName = String(formData.get("guestName") || "").trim();

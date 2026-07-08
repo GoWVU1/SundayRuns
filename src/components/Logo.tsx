@@ -20,7 +20,7 @@ export function Logo({ size = 168 }: { size?: number }) {
             <span className="-ml-[22px] font-display text-[96px] leading-none text-cream">R</span>
           </div>
           <span className="absolute top-[30px] font-display text-[10px] tracking-[4px] text-gold">SUNDAY RUNS</span>
-          <span className="absolute bottom-6 text-[9px] font-bold tracking-[2px] text-muted-navy">EST. 2024</span>
+          <span className="absolute bottom-6 text-[9px] font-bold tracking-[2px] text-muted-navy">EST. 2019</span>
         </div>
       </div>
     </div>

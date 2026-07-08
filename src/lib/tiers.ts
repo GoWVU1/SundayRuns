@@ -10,10 +10,12 @@ export const TIER_UNLOCK_OFFSET_MINUTES: Record<RankedTier, number> = {
 
 export const TIER_ORDER: RankedTier[] = ["core", "regular", "extended"];
 
+// Display names only — "core"/"regular"/"extended" stay as the internal DB/priority-window
+// keys (unlock offsets, guest-sponsor eligibility, etc. are all still keyed on these).
 export const TIER_LABELS: Record<Tier, string> = {
-  core: "CORE",
-  regular: "REGULAR",
-  extended: "EXTENDED",
+  core: "HALL OF FAME",
+  regular: "VETERANS",
+  extended: "ROOKIES",
   guest: "GUEST",
 };
 

@@ -42,6 +42,41 @@ export async function getNoShowCount(accountId: string): Promise<number> {
   return Number(count);
 }
 
+/**
+ * For each account: how many of the most recent (marked) standard games in a row
+ * they were marked 'present' for, counting back from the most recent and stopping
+ * at the first 'no_show'. Unmarked games are simply absent from the data, not a break.
+ */
+export async function getAttendanceStreaks(accountIds: string[]): Promise<Map<string, number>> {
+  const streaks = new Map<string, number>();
+  if (accountIds.length === 0) return streaks;
+
+  const rows = await sql<{ account_id: string; status: AttendanceStatus }[]>`
+    select att.account_id, att.status
+    from attendance att
+    join games g on g.id = att.game_id
+    where att.account_id in ${sql(accountIds)} and g.visibility = 'standard'
+    order by att.account_id, g.starts_at desc
+  `;
+
+  let currentAccount: string | null = null;
+  let broken = false;
+  for (const row of rows) {
+    if (row.account_id !== currentAccount) {
+      currentAccount = row.account_id;
+      broken = false;
+      streaks.set(currentAccount, 0);
+    }
+    if (broken) continue;
+    if (row.status === "present") {
+      streaks.set(currentAccount, (streaks.get(currentAccount) ?? 0) + 1);
+    } else {
+      broken = true;
+    }
+  }
+  return streaks;
+}
+
 /** Past games (already started) with at least one confirmed RSVP still unmarked — surfaced to admin. */
 export async function getGamesNeedingAttendance(): Promise<
   { id: string; starts_at: string; location: string; unmarkedCount: string }[]
