@@ -468,3 +468,11 @@ insert into game_templates (slot, name, location, cap, visibility) values
   (1, 'Weeknight Run', '', 12, 'standard'),
   (2, 'Weekend Game', '', 17, 'standard')
 on conflict (slot) do nothing;
+
+-- ============================================================
+-- Stage H — street address alongside the gym/court name
+-- ============================================================
+-- "location" stays the human name ("Lincoln Park · Court #2"); "address" is
+-- the real mailing address, so calendar apps can drop a map pin on it.
+alter table games add column if not exists address text not null default '';
+alter table game_templates add column if not exists address text not null default '';

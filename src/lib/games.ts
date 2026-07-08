@@ -11,6 +11,7 @@ export type Game = {
   id: string;
   starts_at: string;
   location: string;
+  address: string;
   cap: number;
   is_open: boolean;
   visibility: GameVisibility;
@@ -18,7 +19,7 @@ export type Game = {
   created_at: string;
 };
 
-const GAME_FIELDS = "id, starts_at, location, cap, is_open, visibility, created_by, created_at";
+const GAME_FIELDS = "id, starts_at, location, address, cap, is_open, visibility, created_by, created_at";
 
 export type GameVisibilityInfo = {
   game: Game;
@@ -122,10 +123,14 @@ export async function ensureStandardGame(): Promise<Game> {
   return rows[0];
 }
 
-export async function updateStandardGame(fields: { startsAt: Date; location: string }): Promise<Game> {
+export async function updateStandardGame(fields: {
+  startsAt: Date;
+  location: string;
+  address: string;
+}): Promise<Game> {
   const current = await ensureStandardGame();
   const rows = await sql<Game[]>`
-    update games set starts_at = ${fields.startsAt.toISOString()}, location = ${fields.location}
+    update games set starts_at = ${fields.startsAt.toISOString()}, location = ${fields.location}, address = ${fields.address}
     where id = ${current.id}
     returning ${sql.unsafe(GAME_FIELDS)}
   `;
@@ -163,6 +168,7 @@ export async function getGameAllowlist(gameId: string): Promise<{ tiers: RankedT
 type GameFormFields = {
   startsAt: Date;
   location: string;
+  address: string;
   cap: number;
   visibility: GameVisibility;
   visibleTiers?: RankedTier[];
@@ -191,8 +197,8 @@ async function writeAllowlist(tx: TransactionSql, gameId: string, fields: GameFo
 export async function createGame(fields: GameFormFields & { createdBy: string }): Promise<Game> {
   return sql.begin(async (tx) => {
     const rows = await tx<Game[]>`
-      insert into games (starts_at, location, cap, visibility, created_by)
-      values (${fields.startsAt.toISOString()}, ${fields.location}, ${fields.cap}, ${fields.visibility}, ${fields.createdBy})
+      insert into games (starts_at, location, address, cap, visibility, created_by)
+      values (${fields.startsAt.toISOString()}, ${fields.location}, ${fields.address}, ${fields.cap}, ${fields.visibility}, ${fields.createdBy})
       returning ${sql.unsafe(GAME_FIELDS)}
     `;
     const game = rows[0];
@@ -208,6 +214,7 @@ export async function updateGame(id: string, fields: GameFormFields): Promise<Ga
       update games set
         starts_at = ${fields.startsAt.toISOString()},
         location = ${fields.location},
+        address = ${fields.address},
         cap = ${fields.cap},
         visibility = ${fields.visibility}
       where id = ${id}
@@ -235,6 +242,7 @@ export type GameTemplate = {
   slot: 1 | 2;
   name: string;
   location: string;
+  address: string;
   cap: number;
   visibility: GameVisibility;
   visible_tiers: RankedTier[];
@@ -243,13 +251,13 @@ export type GameTemplate = {
 /** The two admin-editable quick-create presets for the "new one-off game" form. */
 export async function getGameTemplates(): Promise<GameTemplate[]> {
   return sql<GameTemplate[]>`
-    select slot, name, location, cap, visibility, visible_tiers from game_templates order by slot asc
+    select slot, name, location, address, cap, visibility, visible_tiers from game_templates order by slot asc
   `;
 }
 
 export async function getGameTemplate(slot: 1 | 2): Promise<GameTemplate | null> {
   const [row] = await sql<GameTemplate[]>`
-    select slot, name, location, cap, visibility, visible_tiers from game_templates where slot = ${slot}
+    select slot, name, location, address, cap, visibility, visible_tiers from game_templates where slot = ${slot}
   `;
   return row ?? null;
 }
@@ -258,13 +266,14 @@ export async function updateGameTemplate(fields: {
   slot: 1 | 2;
   name: string;
   location: string;
+  address: string;
   cap: number;
   visibility: GameVisibility;
   visibleTiers: RankedTier[];
 }): Promise<void> {
   await sql`
     update game_templates set
-      name = ${fields.name}, location = ${fields.location}, cap = ${fields.cap},
+      name = ${fields.name}, location = ${fields.location}, address = ${fields.address}, cap = ${fields.cap},
       visibility = ${fields.visibility}, visible_tiers = ${sql.array(fields.visibleTiers)}
     where slot = ${fields.slot}
   `;

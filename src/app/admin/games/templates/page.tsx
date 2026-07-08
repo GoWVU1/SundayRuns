@@ -15,8 +15,8 @@ export default async function GameTemplatesPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-4 p-5">
           <span className="-mt-1 text-[11px] text-muted">
-            These pre-fill the &quot;new game&quot; form — location, cap, and visibility only. Date/time is always
-            set when you create the game.
+            These pre-fill the &quot;new game&quot; form — location, address, cap, and visibility only. Date/time is
+            always set when you create the game.
           </span>
           {templates.map((t) => (
             <form
@@ -27,10 +27,16 @@ export default async function GameTemplatesPage() {
               <input type="hidden" name="slot" value={t.slot} />
               <Field label="TEMPLATE NAME" name="name" defaultValue={t.name} />
               <Field
-                label="LOCATION"
+                label="GYM / LOCATION NAME"
                 name="location"
                 defaultValue={t.location}
                 placeholder="Lincoln Park · Court #2"
+              />
+              <Field
+                label="ADDRESS"
+                name="address"
+                defaultValue={t.address}
+                placeholder="123 Main St, Anytown, ST 12345"
               />
               <Field label="CAP" name="cap" type="number" min={1} max={50} defaultValue={t.cap} required />
 

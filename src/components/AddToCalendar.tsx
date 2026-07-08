@@ -1,6 +1,10 @@
 import { buildGoogleCalendarUrl, buildIcsDataUri } from "@/lib/calendar";
 
-export function AddToCalendar({ game }: { game: { id: string; starts_at: string; location: string } }) {
+export function AddToCalendar({
+  game,
+}: {
+  game: { id: string; starts_at: string; location: string; address: string };
+}) {
   return (
     <div className="flex gap-2">
       <a

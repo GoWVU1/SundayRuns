@@ -5,6 +5,7 @@ import { TIER_ORDER, TIER_LABELS, type RankedTier } from "@/lib/tiers";
 export function GameFormFields({
   defaultStartsAt,
   defaultLocation,
+  defaultAddress,
   defaultCap,
   defaultVisibility,
   defaultVisibleTiers,
@@ -13,6 +14,7 @@ export function GameFormFields({
 }: {
   defaultStartsAt: string;
   defaultLocation: string;
+  defaultAddress: string;
   defaultCap: number;
   defaultVisibility: "standard" | "restricted";
   defaultVisibleTiers: RankedTier[];
@@ -23,10 +25,16 @@ export function GameFormFields({
     <>
       <Field label="DATE & TIME" name="startsAt" type="datetime-local" defaultValue={defaultStartsAt} required />
       <Field
-        label="LOCATION"
+        label="GYM / LOCATION NAME"
         name="location"
         defaultValue={defaultLocation}
         placeholder="Lincoln Park · Court #2"
+      />
+      <Field
+        label="ADDRESS"
+        name="address"
+        defaultValue={defaultAddress}
+        placeholder="123 Main St, Anytown, ST 12345"
       />
       <Field label="CAP" name="cap" type="number" min={1} max={50} defaultValue={defaultCap} required />
 

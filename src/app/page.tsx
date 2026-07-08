@@ -88,6 +88,7 @@ export default async function HomePage() {
                   {formatGameDateTime(game.starts_at)}
                 </span>
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
+                {game.address && <span className="text-[11px] text-muted-navy/80">{game.address}</span>}
               </div>
               <div className="mt-3">
                 <AddToCalendar game={game} />
@@ -115,6 +116,7 @@ export default async function HomePage() {
                   {formatGameDateTime(game.starts_at)}
                 </span>
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
+                {game.address && <span className="text-[11px] text-muted-navy/80">{game.address}</span>}
               </div>
               <div className="mt-3">
                 <AddToCalendar game={game} />
@@ -167,6 +169,7 @@ export default async function HomePage() {
                     SPOT #{mySpotNumber} · {formatGameDateTime(game.starts_at)}
                   </span>
                   <span className="text-xs text-muted-navy">{game.location}</span>
+                  {game.address && <span className="text-[11px] text-muted-navy/80">{game.address}</span>}
                 </div>
               </div>
               <AddToCalendar game={game} />

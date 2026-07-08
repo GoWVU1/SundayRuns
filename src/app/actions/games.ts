@@ -37,6 +37,7 @@ export async function updateStandardGameAction(formData: FormData) {
   await updateStandardGame({
     startsAt: localInputToUtc(startsAtInput),
     location: String(formData.get("location") || ""),
+    address: String(formData.get("address") || ""),
   });
   revalidateGameScreens();
 }
@@ -74,6 +75,7 @@ function readGameForm(formData: FormData) {
   return {
     startsAt: localInputToUtc(String(formData.get("startsAt") || "")),
     location: String(formData.get("location") || ""),
+    address: String(formData.get("address") || ""),
     cap,
     visibility,
     visibleTiers: formData.getAll("visibleTiers").map(String).filter(isRankedTier) as RankedTier[],
@@ -110,6 +112,7 @@ export async function updateGameTemplateAction(formData: FormData) {
     slot: slotRaw,
     name: String(formData.get("name") || "").trim() || `Template ${slotRaw}`,
     location: String(formData.get("location") || ""),
+    address: String(formData.get("address") || ""),
     cap,
     visibility: (String(formData.get("visibility") || "standard") as GameVisibility),
     visibleTiers: formData.getAll("visibleTiers").map(String).filter(isRankedTier) as RankedTier[],

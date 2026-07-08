@@ -49,6 +49,7 @@ export default async function NewGamePage({
               key={chosen?.slot ?? "blank"}
               defaultStartsAt={utcToLocalInput(nextSunday6pmUtc())}
               defaultLocation={chosen?.location ?? ""}
+              defaultAddress={chosen?.address ?? ""}
               defaultCap={chosen?.cap ?? 16}
               defaultVisibility={chosen?.visibility ?? "standard"}
               defaultVisibleTiers={chosen?.visible_tiers ?? []}

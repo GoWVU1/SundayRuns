@@ -28,6 +28,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
           <GameFormFields
             defaultStartsAt={utcToLocalInput(game.starts_at)}
             defaultLocation={game.location}
+            defaultAddress={game.address}
             defaultCap={game.cap}
             defaultVisibility={game.visibility}
             defaultVisibleTiers={allowlist.tiers}

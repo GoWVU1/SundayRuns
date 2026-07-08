@@ -49,10 +49,16 @@ export default async function AdminGamePage() {
               defaultValue={utcToLocalInput(game.starts_at)}
             />
             <Field
-              label="LOCATION"
+              label="GYM / LOCATION NAME"
               name="location"
               defaultValue={game.location}
               placeholder="Lincoln Park · Court #2"
+            />
+            <Field
+              label="ADDRESS"
+              name="address"
+              defaultValue={game.address}
+              placeholder="123 Main St, Anytown, ST 12345"
             />
             <PillButton type="submit" variant="navy" className="mt-1">
               SAVE DETAILS
