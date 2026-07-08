@@ -6,8 +6,10 @@ import {
   resetPasswordAction,
   setAdminAction,
   setFantasyMemberAction,
+  setNicknameAction,
   setTierAction,
   type ResetPasswordState,
+  type SetNicknameState,
 } from "@/app/actions/admin";
 import { TagButton } from "@/components/Button";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
@@ -23,6 +25,7 @@ export type PublicMember = {
 };
 
 const initialState: ResetPasswordState = {};
+const initialNicknameState: SetNicknameState = {};
 
 async function callAction(action: (fd: FormData) => Promise<void>, fields: Record<string, string>) {
   const fd = new FormData();
@@ -40,6 +43,10 @@ export function MemberRow({
   adminCount: number;
 }) {
   const [state, formAction, pending] = useActionState(resetPasswordAction, initialState);
+  const [nicknameState, nicknameFormAction, nicknamePending] = useActionState(
+    setNicknameAction,
+    initialNicknameState
+  );
   const isLastAdmin = member.is_admin && adminCount <= 1;
 
   return (
@@ -97,6 +104,32 @@ export function MemberRow({
             className="h-4 w-4 accent-navy"
           />
         </label>
+
+        <form action={nicknameFormAction} className="flex flex-col gap-2">
+          <span className="text-[10px] font-extrabold tracking-[2px] text-muted">NICKNAME</span>
+          <input type="hidden" name="accountId" value={member.id} />
+          <div className="flex gap-2">
+            <input
+              name="nickname"
+              defaultValue={member.name}
+              placeholder="Display name"
+              className="w-full flex-1 rounded-[10px] border border-navy/20 bg-cream px-3 py-2.5 text-sm text-navy outline-none focus:border-navy/50"
+            />
+            <button
+              type="submit"
+              disabled={nicknamePending}
+              className="flex-shrink-0 rounded-[10px] bg-navy px-4 py-2.5 text-xs font-extrabold tracking-wide text-cream disabled:opacity-60"
+            >
+              {nicknamePending ? "SAVING…" : "SAVE"}
+            </button>
+          </div>
+          {nicknameState.error && (
+            <span className="text-[11px] font-semibold text-danger">{nicknameState.error}</span>
+          )}
+          {nicknameState.success && (
+            <span className="text-[11px] font-semibold text-success">Nickname updated.</span>
+          )}
+        </form>
 
         <form action={formAction} className="flex flex-col gap-2">
           <input type="hidden" name="accountId" value={member.id} />

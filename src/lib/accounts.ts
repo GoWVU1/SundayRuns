@@ -87,6 +87,11 @@ export async function setAccountFantasyMember(accountId: string, fantasyMember: 
   await sql`update accounts set fantasy_member = ${fantasyMember} where id = ${accountId}`;
 }
 
+/** Overrides the default "First L." display name — used as a nickname everywhere `name` is shown. */
+export async function setAccountName(accountId: string, name: string) {
+  await sql`update accounts set name = ${name} where id = ${accountId}`;
+}
+
 export async function countAccounts() {
   const [{ count }] = await sql<{ count: string }[]>`
     select count(*)::text from accounts where tier != 'guest'

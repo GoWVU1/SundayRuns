@@ -9,6 +9,7 @@ import {
   findAccountById,
   setAccountAdmin,
   setAccountFantasyMember,
+  setAccountName,
   setAccountPassword,
   setAccountTier,
 } from "@/lib/accounts";
@@ -56,6 +57,24 @@ export async function setFantasyMemberAction(formData: FormData) {
   const fantasyMember = String(formData.get("fantasyMember") || "") === "true";
   await setAccountFantasyMember(accountId, fantasyMember);
   revalidatePath("/admin/members");
+}
+
+export type SetNicknameState = { error?: string; success?: boolean };
+
+export async function setNicknameAction(
+  _prevState: SetNicknameState,
+  formData: FormData
+): Promise<SetNicknameState> {
+  await requireAdmin();
+  const accountId = String(formData.get("accountId") || "");
+  const nickname = String(formData.get("nickname") || "").trim();
+  if (!nickname) return { error: "Nickname can't be empty." };
+  if (nickname.length > 40) return { error: "Keep it under 40 characters." };
+
+  await setAccountName(accountId, nickname);
+  revalidatePath("/admin/members");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function deleteAccountAction(formData: FormData) {
