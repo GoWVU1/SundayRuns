@@ -13,6 +13,8 @@ export default async function AdminMembersPage() {
     name: a.name,
     phone: a.phone,
     is_admin: a.is_admin,
+    tier: a.tier,
+    fantasy_member: a.fantasy_member,
   }));
 
   return (
@@ -26,7 +28,8 @@ export default async function AdminMembersPage() {
       <BottomNav
         items={[
           { label: "DASH", href: "/admin", active: false },
-          { label: "GAME", href: "/admin/game", active: false },
+          { label: "GAMES", href: "/admin/games", active: false },
+          { label: "GUESTS", href: "/admin/guests", active: false },
           { label: "MEMBERS", href: "/admin/members", active: true },
         ]}
       />

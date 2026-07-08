@@ -32,9 +32,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Fantasy membership is independent of is_admin — an admin who isn't
+  // personally in the league shouldn't see it either.
+  if (pathname.startsWith("/fantasy") && account && !account.fantasy_member) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // manifest.webmanifest/sw.js/icons are fetched by the browser/OS outside any
+  // user session (e.g. checking "add to home screen" eligibility) — never gate them.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icons/).*)"],
 };

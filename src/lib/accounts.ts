@@ -1,14 +1,19 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import type { RankedTier } from "@/lib/tiers";
+
+const ACCOUNT_FIELDS = "id, name, phone, password_hash, is_admin, tier, fantasy_member, created_at";
 
 export type Account = {
   id: string;
   name: string;
   phone: string;
-  password_hash: string;
+  /** Null for guest accounts — they never self-serve signup, so they have no password. */
+  password_hash: string | null;
   is_admin: boolean;
   tier: string;
+  fantasy_member: boolean;
   created_at: string;
 };
 
@@ -18,8 +23,14 @@ export function normalizePhone(raw: string) {
 
 export async function findAccountByPhone(phone: string) {
   const rows = await sql<Account[]>`
-    select id, name, phone, password_hash, is_admin, tier, created_at
-    from accounts where phone = ${normalizePhone(phone)}
+    select ${sql.unsafe(ACCOUNT_FIELDS)} from accounts where phone = ${normalizePhone(phone)}
+  `;
+  return rows[0] ?? null;
+}
+
+export async function findAccountById(accountId: string) {
+  const rows = await sql<Account[]>`
+    select ${sql.unsafe(ACCOUNT_FIELDS)} from accounts where id = ${accountId}
   `;
   return rows[0] ?? null;
 }
@@ -29,15 +40,14 @@ export async function createAccount(name: string, phone: string, password: strin
   const rows = await sql<Account[]>`
     insert into accounts (name, phone, password_hash)
     values (${name.trim()}, ${normalizePhone(phone)}, ${passwordHash})
-    returning id, name, phone, password_hash, is_admin, tier, created_at
+    returning ${sql.unsafe(ACCOUNT_FIELDS)}
   `;
   return rows[0];
 }
 
 export async function listAccounts() {
   return sql<Account[]>`
-    select id, name, phone, password_hash, is_admin, tier, created_at
-    from accounts order by name asc
+    select ${sql.unsafe(ACCOUNT_FIELDS)} from accounts where tier != 'guest' order by name asc
   `;
 }
 
@@ -50,7 +60,17 @@ export async function setAccountAdmin(accountId: string, isAdmin: boolean) {
   await sql`update accounts set is_admin = ${isAdmin} where id = ${accountId}`;
 }
 
+export async function setAccountTier(accountId: string, tier: RankedTier) {
+  await sql`update accounts set tier = ${tier} where id = ${accountId}`;
+}
+
+export async function setAccountFantasyMember(accountId: string, fantasyMember: boolean) {
+  await sql`update accounts set fantasy_member = ${fantasyMember} where id = ${accountId}`;
+}
+
 export async function countAccounts() {
-  const [{ count }] = await sql<{ count: string }[]>`select count(*)::text from accounts`;
+  const [{ count }] = await sql<{ count: string }[]>`
+    select count(*)::text from accounts where tier != 'guest'
+  `;
   return Number(count);
 }

@@ -1,51 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { getSessionAccount } from "@/lib/auth";
-import { adjustCurrentGameCap, toggleCurrentGame, updateGameDetails } from "@/lib/games";
-import { setAccountAdmin, setAccountPassword } from "@/lib/accounts";
-
-async function requireAdmin() {
-  const account = await getSessionAccount();
-  if (!account) redirect("/login");
-  if (!account.is_admin) redirect("/");
-  return account;
-}
-
-function revalidateGameScreens() {
-  revalidatePath("/admin/game");
-  revalidatePath("/admin");
-  revalidatePath("/");
-}
-
-export async function toggleGameAction() {
-  await requireAdmin();
-  await toggleCurrentGame();
-  revalidateGameScreens();
-}
-
-export async function updateGameAction(formData: FormData) {
-  await requireAdmin();
-  await updateGameDetails({
-    gameDate: String(formData.get("gameDate") || ""),
-    gameTime: String(formData.get("gameTime") || ""),
-    location: String(formData.get("location") || ""),
-  });
-  revalidateGameScreens();
-}
-
-export async function capUpAction() {
-  await requireAdmin();
-  await adjustCurrentGameCap(1);
-  revalidateGameScreens();
-}
-
-export async function capDownAction() {
-  await requireAdmin();
-  await adjustCurrentGameCap(-1);
-  revalidateGameScreens();
-}
+import { requireAdmin } from "@/lib/auth";
+import { isRankedTier } from "@/lib/tiers";
+import {
+  setAccountAdmin,
+  setAccountFantasyMember,
+  setAccountPassword,
+  setAccountTier,
+} from "@/lib/accounts";
 
 export type ResetPasswordState = { error?: string; success?: boolean };
 
@@ -71,5 +34,23 @@ export async function setAdminAction(formData: FormData) {
   // Guard against a lone admin accidentally locking themselves out.
   if (accountId === admin.id && !makeAdmin) return;
   await setAccountAdmin(accountId, makeAdmin);
+  revalidatePath("/admin/members");
+}
+
+export async function setTierAction(formData: FormData) {
+  await requireAdmin();
+  const accountId = String(formData.get("accountId") || "");
+  const tier = String(formData.get("tier") || "");
+  if (!isRankedTier(tier)) return;
+  await setAccountTier(accountId, tier);
+  revalidatePath("/admin/members");
+  revalidatePath("/");
+}
+
+export async function setFantasyMemberAction(formData: FormData) {
+  await requireAdmin();
+  const accountId = String(formData.get("accountId") || "");
+  const fantasyMember = String(formData.get("fantasyMember") || "") === "true";
+  await setAccountFantasyMember(accountId, fantasyMember);
   revalidatePath("/admin/members");
 }

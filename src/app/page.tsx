@@ -1,19 +1,31 @@
-import { redirect } from "next/navigation";
-import { getSessionAccount } from "@/lib/auth";
-import { getCurrentGame } from "@/lib/games";
+import Link from "next/link";
+import { requireAccount } from "@/lib/auth";
+import { getNextVisibleGame } from "@/lib/games";
 import { getRoster } from "@/lib/rsvps";
+import { formatGameDateTime, formatUnlockLabel } from "@/lib/time";
+import { TIER_LABELS, canSponsorGuest, isRankedTier } from "@/lib/tiers";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Card } from "@/components/Card";
 import { Ring } from "@/components/Ring";
 import { PillButton, TagButton } from "@/components/Button";
+import { RosterRow } from "@/components/RosterRow";
+import { PushOptIn } from "@/components/PushOptIn";
 import { claimSpotAction, cancelRsvpAction } from "@/app/actions/rsvp";
+import { hasActiveSubscription } from "@/lib/push";
+import { memberNavItems } from "@/lib/nav";
 
 export default async function HomePage() {
-  const account = await getSessionAccount();
-  if (!account) redirect("/login");
+  const account = await requireAccount();
 
-  const game = await getCurrentGame();
+  const [next, alreadySubscribed] = await Promise.all([
+    getNextVisibleGame(account),
+    hasActiveSubscription(account.id),
+  ]);
+  const game = next?.game ?? null;
+  const isClaimable = next?.isClaimable ?? false;
+  const windowOpensAt = next?.windowOpensAt ?? null;
+
   const roster = game ? await getRoster(game.id) : [];
   const confirmed = roster.filter((r) => r.status === "confirmed");
   const waitlisted = roster.filter((r) => r.status === "waitlisted");
@@ -31,12 +43,19 @@ export default async function HomePage() {
       ? waitlisted.findIndex((r) => r.account_id === account.id) + 1
       : null;
 
+  const rankedTier = isRankedTier(account.tier) ? account.tier : "extended";
+  const tierLabel = TIER_LABELS[rankedTier];
+
+  const isOff = !game || !game.is_open;
+  const isWindowLocked = !isOff && !mine && !isClaimable;
+
   return (
     <>
       <Header title="SUNDAY RUNS" subtitle="PICKUP BASKETBALL CLUB" />
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-[18px] p-5">
-          {!game?.is_open && (
+          <PushOptIn alreadySubscribed={alreadySubscribed} />
+          {isOff && (
             <Card tone="dark" className="flex flex-col items-center gap-2 py-[26px] text-center">
               <span className="font-display text-[22px] text-cream">NO GAME TOGGLED ON YET</span>
               <span className="text-xs leading-relaxed text-muted-navy">
@@ -45,19 +64,41 @@ export default async function HomePage() {
             </Card>
           )}
 
-          {game?.is_open && !mine && (
+          {isWindowLocked && game && (
             <Card tone="dark">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold tracking-[3px] text-muted-navy">
-                  NEXT RUN
+                <span className="text-[10px] font-extrabold tracking-[3px] text-muted-navy">NEXT RUN</span>
+                <span className="rounded-full border border-gold/40 px-3 py-1 text-[10px] font-extrabold tracking-wide text-gold">
+                  GAME ON
                 </span>
+              </div>
+              <div className="mt-2 flex flex-col gap-0.5">
+                <span className="font-display text-[26px] tracking-wide text-cream">
+                  {formatGameDateTime(game.starts_at)}
+                </span>
+                <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
+              </div>
+              <div className="my-4 h-px bg-gold/20" />
+              <span className="font-display text-lg tracking-wide text-gold">
+                YOUR WINDOW OPENS {windowOpensAt ? formatUnlockLabel(windowOpensAt) : "SOON"}
+              </span>
+              <span className="mt-1.5 block text-xs leading-relaxed text-muted-navy">
+                You&apos;re a {tierLabel} member — spots open in priority order.
+              </span>
+            </Card>
+          )}
+
+          {!isOff && !mine && isClaimable && game && (
+            <Card tone="dark">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold tracking-[3px] text-muted-navy">NEXT RUN</span>
                 <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-extrabold tracking-wide text-navy">
                   GAME ON
                 </span>
               </div>
               <div className="mt-2 flex flex-col gap-0.5">
                 <span className="font-display text-[26px] tracking-wide text-cream">
-                  {game.game_date || "Date TBD"} · {game.game_time || "Time TBD"}
+                  {formatGameDateTime(game.starts_at)}
                 </span>
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
               </div>
@@ -79,12 +120,16 @@ export default async function HomePage() {
                 </div>
               </div>
               <form action={claimSpotAction} className="mt-[18px]">
+                <input type="hidden" name="gameId" value={game.id} />
                 <PillButton type="submit">{isFull ? "JOIN WAITLIST" : "CLAIM MY SPOT"}</PillButton>
               </form>
+              <div className="mt-2.5 text-center text-[11px] text-muted-navy">
+                You&apos;re a <strong className="text-gold">{tierLabel}</strong> member
+              </div>
             </Card>
           )}
 
-          {mine?.status === "confirmed" && (
+          {mine?.status === "confirmed" && game && (
             <Card tone="dark" className="flex flex-col gap-4">
               <div className="flex items-center gap-[18px]">
                 <Ring fraction={confirmed.length / cap} size={96} thickness={9}>
@@ -97,17 +142,16 @@ export default async function HomePage() {
                     YOU&apos;RE IN, {account.name.toUpperCase()}
                   </span>
                   <span className="font-display text-xl leading-none text-cream">
-                    SPOT #{mySpotNumber} · {game?.game_date}
+                    SPOT #{mySpotNumber} · {formatGameDateTime(game.starts_at)}
                   </span>
-                  <span className="text-xs text-muted-navy">
-                    {game?.game_time} · {game?.location}
-                  </span>
+                  <span className="text-xs text-muted-navy">{game.location}</span>
                 </div>
               </div>
               <div className="h-px bg-gold/25" />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-navy">Can&apos;t make it anymore?</span>
                 <form action={cancelRsvpAction}>
+                  <input type="hidden" name="gameId" value={game.id} />
                   <TagButton variant="danger" type="submit">
                     GIVE UP MY SPOT
                   </TagButton>
@@ -116,7 +160,7 @@ export default async function HomePage() {
             </Card>
           )}
 
-          {mine?.status === "waitlisted" && (
+          {mine?.status === "waitlisted" && game && (
             <Card tone="dark" className="flex flex-col gap-3">
               <span className="text-[10px] font-extrabold tracking-[3px] text-muted-navy">
                 YOU&apos;RE ON THE WAITLIST
@@ -126,6 +170,7 @@ export default async function HomePage() {
                 Game is full at {cap}. First to respond when a spot opens gets it.
               </span>
               <form action={cancelRsvpAction}>
+                <input type="hidden" name="gameId" value={game.id} />
                 <TagButton variant="danger" type="submit" className="mt-1">
                   LEAVE WAITLIST
                 </TagButton>
@@ -146,23 +191,21 @@ export default async function HomePage() {
               </div>
             )}
             {confirmed.map((p, i) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-3 border-b border-navy/10 px-3.5 py-[11px] last:border-b-0"
-              >
-                <span className="w-5 font-display text-[15px] text-[#9c8f6e]">{i + 1}</span>
-                <span className="flex-1 text-sm font-semibold text-navy">{p.name}</span>
-              </div>
+              <RosterRow key={p.id} num={i + 1} name={p.name} tier={p.tier} sponsorName={p.sponsor_name} />
             ))}
           </div>
+
+          {canSponsorGuest(account.tier) && (
+            <Link
+              href="/guests/new"
+              className="w-full rounded-full bg-navy py-3 text-center text-xs font-extrabold tracking-wide text-cream"
+            >
+              INVITE A GUEST
+            </Link>
+          )}
         </div>
       </main>
-      <BottomNav
-        items={[
-          { label: "HOME", href: "/", active: true },
-          ...(account.is_admin ? [{ label: "ADMIN", href: "/admin", active: false }] : []),
-        ]}
-      />
+      <BottomNav items={memberNavItems(account, "HOME")} />
     </>
   );
 }

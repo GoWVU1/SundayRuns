@@ -17,6 +17,14 @@ const bebasNeue = Bebas_Neue({
 export const metadata: Metadata = {
   title: "Sunday Runs",
   description: "Pickup basketball roster, RSVPs, and waitlist for the Sunday Runs crew.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Sunday Runs",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

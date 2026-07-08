@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { sql } from "@/lib/db";
 import type { Account } from "@/lib/accounts";
@@ -45,7 +46,7 @@ export async function destroySession() {
 export async function getAccountForToken(token: string | undefined): Promise<Account | null> {
   if (!token) return null;
   const rows = await sql<Account[]>`
-    select a.id, a.name, a.phone, a.password_hash, a.is_admin, a.tier, a.created_at
+    select a.id, a.name, a.phone, a.password_hash, a.is_admin, a.tier, a.fantasy_member, a.created_at
     from sessions s
     join accounts a on a.id = s.account_id
     where s.id = ${token} and s.expires_at > now()
@@ -56,4 +57,18 @@ export async function getAccountForToken(token: string | undefined): Promise<Acc
 export async function getSessionAccount(): Promise<Account | null> {
   const jar = await cookies();
   return getAccountForToken(jar.get(COOKIE_NAME)?.value);
+}
+
+/** Server Action guard: any logged-in account. Redirects to /login otherwise. */
+export async function requireAccount(): Promise<Account> {
+  const account = await getSessionAccount();
+  if (!account) redirect("/login");
+  return account;
+}
+
+/** Server Action guard: admin only. Redirects non-admins home, unauthenticated to /login. */
+export async function requireAdmin(): Promise<Account> {
+  const account = await requireAccount();
+  if (!account.is_admin) redirect("/");
+  return account;
 }

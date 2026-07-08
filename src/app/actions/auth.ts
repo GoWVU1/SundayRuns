@@ -1,7 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createAccount, findAccountByPhone, normalizePhone } from "@/lib/accounts";
+import {
+  createAccount,
+  findAccountByPhone,
+  normalizePhone,
+  setAccountPassword,
+  setAccountTier,
+} from "@/lib/accounts";
 import { createSession, destroySession, verifyPassword } from "@/lib/auth";
 
 export type AuthFormState = { error?: string };
@@ -19,7 +25,17 @@ export async function signupAction(
   if (password.length < 6) return { error: "Password must be at least 6 characters." };
 
   const existing = await findAccountByPhone(phone);
-  if (existing) return { error: "That phone number is already registered — try logging in instead." };
+  if (existing) {
+    // A guest account (invited by a sponsor, no password) claiming their own
+    // login for the first time — not a collision, just "activate my account."
+    if (existing.tier === "guest" && !existing.password_hash) {
+      await setAccountPassword(existing.id, password);
+      await setAccountTier(existing.id, "extended");
+      await createSession(existing.id);
+      redirect("/");
+    }
+    return { error: "That phone number is already registered — try logging in instead." };
+  }
 
   const account = await createAccount(name, phone, password);
   await createSession(account.id);
@@ -34,7 +50,7 @@ export async function loginAction(
   const password = String(formData.get("password") || "");
 
   const account = await findAccountByPhone(phone);
-  if (!account) return { error: "No account found for that phone number." };
+  if (!account || !account.password_hash) return { error: "No account found for that phone number." };
 
   const valid = await verifyPassword(password, account.password_hash);
   if (!valid) return { error: "Wrong password." };
