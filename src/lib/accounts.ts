@@ -24,6 +24,19 @@ export function normalizePhone(raw: string) {
   return raw.replace(/\D/g, "");
 }
 
+/** Two-letter initials for the avatar badge — falls back to splitting the display name for guest-created accounts. */
+export function getInitials(account: Pick<Account, "first_name" | "last_name" | "name">): string {
+  if (account.first_name && account.last_name) {
+    return (account.first_name[0] + account.last_name[0]).toUpperCase();
+  }
+  const parts = account.name.trim().split(/\s+/);
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+}
+
 export async function findAccountByPhone(phone: string) {
   const rows = await sql<Account[]>`
     select ${sql.unsafe(ACCOUNT_FIELDS)} from accounts where phone = ${normalizePhone(phone)}

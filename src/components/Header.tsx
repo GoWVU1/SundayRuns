@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { logoutAction } from "@/app/actions/auth";
+import { getSessionAccount } from "@/lib/auth";
+import { getInitials } from "@/lib/accounts";
+import { getLatestChampionAccountId } from "@/lib/fantasy";
 import { AvatarBadge, HeaderMark } from "./Logo";
 
-export function Header({
+export async function Header({
   title,
   subtitle,
   tag,
@@ -15,6 +17,9 @@ export function Header({
   backHref?: string;
   exitHref?: string;
 }) {
+  const account = exitHref ? null : await getSessionAccount();
+  const isChampion = account ? account.id === (await getLatestChampionAccountId()) : false;
+
   return (
     <div className="flex-shrink-0">
       <div className="flex items-center justify-between bg-navy px-5 py-3.5">
@@ -47,11 +52,9 @@ export function Header({
             EXIT
           </Link>
         ) : (
-          <form action={logoutAction}>
-            <button type="submit" aria-label="Log out" title="Log out">
-              <AvatarBadge />
-            </button>
-          </form>
+          <Link href="/account" aria-label="Account" title="Account">
+            <AvatarBadge initials={account ? getInitials(account) : undefined} isChampion={isChampion} />
+          </Link>
         )}
       </div>
       <div className="h-1 bg-gold" />

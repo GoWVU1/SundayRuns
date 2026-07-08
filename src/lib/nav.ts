@@ -1,7 +1,9 @@
 import type { Account } from "@/lib/accounts";
 import { canSponsorGuest } from "@/lib/tiers";
 
-export type MemberNavLabel = "HOME" | "GUESTS" | "FANTASY" | "ADMIN";
+// "ACCOUNT" isn't a bottom-nav tab (reached via the header avatar instead) — it's
+// a valid `active` value purely so that page doesn't force one of the real tabs lit.
+export type MemberNavLabel = "HOME" | "GUESTS" | "FANTASY" | "ADMIN" | "ACCOUNT";
 
 export function memberNavItems(account: Account, active: MemberNavLabel) {
   return [

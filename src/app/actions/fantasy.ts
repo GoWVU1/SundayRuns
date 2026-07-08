@@ -9,9 +9,11 @@ import {
   markLoserCompleted,
   markLoserStarted,
   pickPunishment,
+  setDuesPaid,
   setStanding,
   startNewLoser,
   updateContractArticle,
+  updateStandingNarrative,
 } from "@/lib/fantasy";
 
 function revalidateFantasy() {
@@ -33,6 +35,40 @@ export async function setStandingAction(formData: FormData) {
   if (!displayName || !Number.isFinite(payoutUsd)) return;
 
   await setStanding({ year, place, displayName, payoutUsd });
+  revalidateFantasy();
+}
+
+export async function saveChampionRecapAction(formData: FormData) {
+  await requireAdmin();
+  const year = Number(formData.get("year"));
+  const place = Number(formData.get("place"));
+  if (place !== 1 && place !== 2 && place !== 3) return;
+  const displayName = String(formData.get("displayName") || "").trim();
+  const payoutUsd = Number(formData.get("payoutUsd"));
+  if (!displayName || !Number.isFinite(payoutUsd)) return;
+
+  await setStanding({ year, place, displayName, payoutUsd });
+  await updateStandingNarrative({
+    year,
+    place,
+    record: String(formData.get("record") || "").trim(),
+    finalStanding: String(formData.get("finalStanding") || "").trim(),
+    clinched: String(formData.get("clinched") || "").trim(),
+    mvp: String(formData.get("mvp") || "").trim(),
+    note: String(formData.get("note") || "").trim(),
+  });
+  revalidateFantasy();
+  revalidatePath(`/admin/fantasy/champion/${place}`);
+}
+
+export async function toggleDuesPaidAction(formData: FormData) {
+  await requireAdmin();
+  const year = Number(formData.get("year"));
+  const accountId = String(formData.get("accountId") || "");
+  const paid = formData.get("paid") === "true";
+  if (!Number.isFinite(year) || !accountId) return;
+
+  await setDuesPaid(year, accountId, paid);
   revalidateFantasy();
 }
 

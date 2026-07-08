@@ -36,11 +36,30 @@ export function HeaderMark() {
   );
 }
 
-export function AvatarBadge() {
+export function AvatarBadge({ initials, isChampion = false }: { initials?: string; isChampion?: boolean }) {
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-gold bg-navy-light leading-none">
-      <span className="font-display text-sm text-gold">S</span>
-      <span className="-ml-[3px] font-display text-sm text-cream">R</span>
+    <div className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-gold bg-navy-light leading-none">
+      {initials ? (
+        <span className="font-display text-sm text-gold">{initials}</span>
+      ) : (
+        <>
+          <span className="font-display text-sm text-gold">S</span>
+          <span className="-ml-[3px] font-display text-sm text-cream">R</span>
+        </>
+      )}
+      {isChampion && (
+        <div className="absolute -top-[7px] left-1/2 flex h-[15px] w-[18px] -translate-x-1/2 items-center justify-center rounded-[4px] bg-navy">
+          <svg width="13" height="11" viewBox="0 0 24 20">
+            <path
+              d="M2 18L2 7L7.5 11.5L12 3L16.5 11.5L22 7L22 18Z"
+              fill="#FFC72C"
+              stroke="#041E42"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      )}
     </div>
   );
 }

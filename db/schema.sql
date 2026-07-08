@@ -415,3 +415,26 @@ where first_name = '' and last_name = '' and position(' ' in name) > 0;
 update accounts
 set first_name = name
 where first_name = '' and last_name = '' and position(' ' in name) = 0;
+
+-- ============================================================
+-- Stage F — champion recap, lifetime winnings, buy-in tracking
+-- ============================================================
+-- Optional per-finish narrative fields for the champion recap screen.
+-- All nullable — the recap page simply omits a row/section that's unset,
+-- same pattern as fantasy_contract_articles' "hasn't been added yet".
+alter table fantasy_standings add column if not exists record text;
+alter table fantasy_standings add column if not exists final_standing text;
+alter table fantasy_standings add column if not exists clinched text;
+alter table fantasy_standings add column if not exists mvp text;
+alter table fantasy_standings add column if not exists note text;
+
+-- League dues ("buy-in") status per fantasy season, kept public so members
+-- can see who's squared up before the draft (Section 1.1 of the contract).
+create table if not exists fantasy_dues (
+  id uuid primary key default gen_random_uuid(),
+  year int not null,
+  account_id uuid not null references accounts(id) on delete cascade,
+  paid boolean not null default false,
+  paid_at timestamptz,
+  unique (year, account_id)
+);

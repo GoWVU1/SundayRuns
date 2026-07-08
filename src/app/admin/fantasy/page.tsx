@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getLatestStandings, getCurrentLoser } from "@/lib/fantasy";
+import { getLatestStandings, getCurrentLoser, getBuyInStatus } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { StandingsAdminForm } from "@/components/fantasy/StandingsAdminForm";
+import { toggleDuesPaidAction } from "@/app/actions/fantasy";
 
 const MEDAL_STYLE: Record<number, { bg: string; color: string; label: string }> = {
   1: { bg: "#FFC72C", color: "#041E42", label: "CHAMPION" },
@@ -11,7 +11,14 @@ const MEDAL_STYLE: Record<number, { bg: string; color: string; label: string }> 
 };
 
 export default async function AdminFantasyPage() {
-  const [{ year, standings }, currentLoser] = await Promise.all([getLatestStandings(), getCurrentLoser()]);
+  const currentYear = new Date().getUTCFullYear();
+  const [{ year, standings }, currentLoser, buyIn] = await Promise.all([
+    getLatestStandings(),
+    getCurrentLoser(),
+    getBuyInStatus(currentYear),
+  ]);
+  const editYear = year ?? currentYear;
+  const buyInPaidCount = buyIn.filter((b) => b.paid).length;
 
   return (
     <>
@@ -25,14 +32,13 @@ export default async function AdminFantasyPage() {
             <div className="h-0.5 flex-1 bg-navy" />
           </div>
 
-          {standings.length === 0 && (
-            <div className="py-4 text-center text-xs text-muted">No standings recorded yet.</div>
-          )}
-          {standings.map((s) => {
-            const medal = MEDAL_STYLE[s.place];
+          {[1, 2, 3].map((place) => {
+            const s = standings.find((row) => row.place === place);
+            const medal = MEDAL_STYLE[place];
             return (
-              <div
-                key={s.place}
+              <Link
+                key={place}
+                href={`/admin/fantasy/champion/${place}?year=${editYear}`}
                 className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-navy/30 bg-card px-4 py-3.5"
               >
                 <div
@@ -40,21 +46,59 @@ export default async function AdminFantasyPage() {
                   style={{ background: medal?.bg }}
                 >
                   <span className="font-display text-xl" style={{ color: medal?.color }}>
-                    {s.place}
+                    {place}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5">
-                  <span className="text-[15px] font-bold text-navy">{s.name}</span>
+                  <span className="text-[15px] font-bold text-navy">{s?.name ?? "Not set"}</span>
                   <span className="text-[10px] font-extrabold tracking-wide text-muted">{medal?.label}</span>
                 </div>
-                <span className="font-display text-[22px] text-navy">
-                  ${Number(s.payout_usd).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </span>
-              </div>
+                {s && (
+                  <span className="font-display text-[22px] text-navy">
+                    ${Number(s.payout_usd).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </span>
+                )}
+                <span className="text-lg text-navy">›</span>
+              </Link>
             );
           })}
+          <span className="-mt-2 text-center text-[11px] text-muted">
+            Tap a place to edit name, payout, and the season recap
+          </span>
 
-          <StandingsAdminForm defaultYear={year ?? new Date().getUTCFullYear()} />
+          <div className="mt-1 flex items-center gap-2.5">
+            <span className="font-display text-[15px] tracking-wide text-navy">{currentYear} BUY-IN STATUS</span>
+            <div className="h-0.5 flex-1 bg-navy" />
+            <span className="text-[11px] font-extrabold text-muted">
+              {buyInPaidCount}/{buyIn.length}
+            </span>
+          </div>
+          <div className="overflow-hidden rounded-2xl border-[1.5px] border-navy/30 bg-card">
+            {buyIn.length === 0 && (
+              <div className="px-3.5 py-4 text-center text-xs text-muted">No fantasy members yet.</div>
+            )}
+            {buyIn.map((b) => (
+              <div
+                key={b.accountId}
+                className="flex items-center gap-3 border-b border-navy/10 px-4 py-[11px] last:border-b-0"
+              >
+                <span className="flex-1 text-sm font-semibold text-navy">{b.name}</span>
+                <form action={toggleDuesPaidAction}>
+                  <input type="hidden" name="year" value={currentYear} />
+                  <input type="hidden" name="accountId" value={b.accountId} />
+                  <input type="hidden" name="paid" value={(!b.paid).toString()} />
+                  <button
+                    type="submit"
+                    className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-[9px] font-extrabold tracking-wide ${
+                      b.paid ? "border-success text-success" : "border-danger text-danger"
+                    }`}
+                  >
+                    {b.paid ? "PAID" : "UNPAID"}
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
 
           <div className="mt-1 flex items-center gap-2.5">
             <span className="font-display text-[15px] tracking-wide text-navy">THE OTHER END</span>

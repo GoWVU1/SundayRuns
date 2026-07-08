@@ -42,6 +42,26 @@ export async function getNoShowCount(accountId: string): Promise<number> {
   return Number(count);
 }
 
+export async function getGamesPlayedCount(accountId: string): Promise<number> {
+  const [{ count }] = await sql<{ count: string }[]>`
+    select count(*)::text from attendance where account_id = ${accountId} and status = 'present'
+  `;
+  return Number(count);
+}
+
+/** Most recent N standard games' present/absent status for this account, oldest first (for a left-to-right strip). */
+export async function getRecentAttendanceWeeks(accountId: string, limit = 8): Promise<boolean[]> {
+  const rows = await sql<{ status: AttendanceStatus }[]>`
+    select att.status
+    from attendance att
+    join games g on g.id = att.game_id
+    where att.account_id = ${accountId} and g.visibility = 'standard'
+    order by g.starts_at desc
+    limit ${limit}
+  `;
+  return rows.map((r) => r.status === "present").reverse();
+}
+
 /**
  * For each account: how many of the most recent (marked) standard games in a row
  * they were marked 'present' for, counting back from the most recent and stopping

@@ -139,7 +139,11 @@ export default async function HomePage() {
 
           {mine?.status === "confirmed" && game && (
             <Card tone="dark" className="flex flex-col gap-4">
-              <ClaimCelebration gameId={game.id} accountId={account.id} />
+              <ClaimCelebration
+                gameId={game.id}
+                accountId={account.id}
+                subline={`Spot #${mySpotNumber} · ${formatGameDateTime(game.starts_at)}`}
+              />
               <div className="flex items-center gap-[18px]">
                 <Ring fraction={confirmed.length / cap} size={96} thickness={9}>
                   <span className="font-display text-[22px] leading-none text-gold">

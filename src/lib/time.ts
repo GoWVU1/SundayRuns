@@ -36,6 +36,11 @@ export function formatGameDateTime(date: Date | string): string {
   return `${formatGameDateLabel(date)} · ${formatGameTimeLabel(date)}`;
 }
 
+/** "Mar 2024" — for "member since" copy on the account profile page. */
+export function formatMonthYear(date: Date | string): string {
+  return DateTime.fromJSDate(new Date(date)).setZone(APP_TIMEZONE).toFormat("LLL yyyy");
+}
+
 /** "Sat 5:00 PM" — for "unlocks {label}" copy. */
 export function formatUnlockLabel(date: Date): string {
   return DateTime.fromJSDate(date).setZone(APP_TIMEZONE).toFormat("ccc h:mm a");

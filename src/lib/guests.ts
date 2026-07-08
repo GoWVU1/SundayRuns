@@ -26,6 +26,13 @@ const REQUEST_FIELDS = `
   g.guest_name, g.guest_phone, g.status, g.requested_at, g.decided_at
 `;
 
+export async function getGuestsBroughtCount(sponsorAccountId: string): Promise<number> {
+  const [{ count }] = await sql<{ count: string }[]>`
+    select count(*)::text from rsvps where sponsor_account_id = ${sponsorAccountId}
+  `;
+  return Number(count);
+}
+
 export async function getMonthlyGuestAllowanceRemaining(sponsorAccountId: string): Promise<number> {
   const [{ count }] = await sql<{ count: string }[]>`
     select count(*)::text from guest_requests

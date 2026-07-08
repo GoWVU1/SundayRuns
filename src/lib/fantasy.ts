@@ -35,7 +35,7 @@ export function isPunishmentKey(value: string): value is PunishmentKey {
   return PUNISHMENTS.some((p) => p.key === value);
 }
 
-export type StandingEntry = { place: number; name: string; payout_usd: string };
+export type StandingEntry = { place: number; name: string; payout_usd: string; account_id: string | null };
 
 async function getLatestStandingsYear(): Promise<number | null> {
   const [row] = await sql<{ year: number | null }[]>`select max(year) as year from fantasy_standings`;
@@ -56,11 +56,149 @@ export async function getLatestChampionAccountId(): Promise<string | null> {
   return row?.account_id ?? null;
 }
 
+const PLACE_LABEL: Record<number, string> = { 1: "Champion", 2: "Runner-Up", 3: "Third Place" };
+
+export type SeasonRecap = {
+  year: number;
+  place: number;
+  name: string;
+  payoutUsd: string;
+  record: string | null;
+  finalStanding: string | null;
+  clinched: string | null;
+  mvp: string | null;
+  note: string | null;
+};
+
+/** The account's placement in the most recent standings year, if any — drives the champion recap hero card. */
+export async function getLatestSeasonRecap(accountId: string): Promise<SeasonRecap | null> {
+  const year = await getLatestStandingsYear();
+  if (!year) return null;
+  const [row] = await sql<
+    {
+      place: number;
+      name: string;
+      payout_usd: string;
+      record: string | null;
+      final_standing: string | null;
+      clinched: string | null;
+      mvp: string | null;
+      note: string | null;
+    }[]
+  >`
+    select fs.place, coalesce(a.name, fs.display_name) as name, fs.payout_usd::text,
+      fs.record, fs.final_standing, fs.clinched, fs.mvp, fs.note
+    from fantasy_standings fs
+    left join accounts a on a.id = fs.account_id
+    where fs.year = ${year} and fs.account_id = ${accountId}
+  `;
+  if (!row) return null;
+  return {
+    year,
+    place: row.place,
+    name: row.name,
+    payoutUsd: row.payout_usd,
+    record: row.record,
+    finalStanding: row.final_standing,
+    clinched: row.clinched,
+    mvp: row.mvp,
+    note: row.note,
+  };
+}
+
+export type LifetimeLedgerEntry = { year: number; placeLabel: string; amount: string };
+
+/** All-time total + year-by-year breakdown of everything an account has won, across every season. */
+export async function getLifetimeWinnings(
+  accountId: string
+): Promise<{ total: string; ledger: LifetimeLedgerEntry[] }> {
+  const rows = await sql<{ year: number; place: number; payout_usd: string }[]>`
+    select year, place, payout_usd::text from fantasy_standings
+    where account_id = ${accountId}
+    order by year desc
+  `;
+  const total = rows.reduce((sum, r) => sum + Number(r.payout_usd), 0);
+  return {
+    total: total.toFixed(2),
+    ledger: rows.map((r) => ({ year: r.year, placeLabel: PLACE_LABEL[r.place] ?? `#${r.place}`, amount: r.payout_usd })),
+  };
+}
+
+export async function getStandingByPlace(year: number, place: 1 | 2 | 3): Promise<SeasonRecap | null> {
+  const [row] = await sql<
+    {
+      name: string | null;
+      payout_usd: string;
+      record: string | null;
+      final_standing: string | null;
+      clinched: string | null;
+      mvp: string | null;
+      note: string | null;
+    }[]
+  >`
+    select coalesce(a.name, fs.display_name) as name, fs.payout_usd::text,
+      fs.record, fs.final_standing, fs.clinched, fs.mvp, fs.note
+    from fantasy_standings fs
+    left join accounts a on a.id = fs.account_id
+    where fs.year = ${year} and fs.place = ${place}
+  `;
+  if (!row || !row.name) return null;
+  return {
+    year,
+    place,
+    name: row.name,
+    payoutUsd: row.payout_usd,
+    record: row.record,
+    finalStanding: row.final_standing,
+    clinched: row.clinched,
+    mvp: row.mvp,
+    note: row.note,
+  };
+}
+
+export async function updateStandingNarrative(fields: {
+  year: number;
+  place: 1 | 2 | 3;
+  record: string;
+  finalStanding: string;
+  clinched: string;
+  mvp: string;
+  note: string;
+}): Promise<void> {
+  await sql`
+    update fantasy_standings set
+      record = ${fields.record || null}, final_standing = ${fields.finalStanding || null},
+      clinched = ${fields.clinched || null}, mvp = ${fields.mvp || null}, note = ${fields.note || null}
+    where year = ${fields.year} and place = ${fields.place}
+  `;
+}
+
+export type BuyInEntry = { accountId: string; name: string; paid: boolean };
+
+/** Public dues status for every fantasy member this year — kept visible so everyone can see who's squared up before the draft. */
+export async function getBuyInStatus(year: number): Promise<BuyInEntry[]> {
+  return sql<BuyInEntry[]>`
+    select a.id as "accountId", a.name, coalesce(d.paid, false) as paid
+    from accounts a
+    left join fantasy_dues d on d.account_id = a.id and d.year = ${year}
+    where a.fantasy_member = true
+    order by a.name asc
+  `;
+}
+
+export async function setDuesPaid(year: number, accountId: string, paid: boolean): Promise<void> {
+  await sql`
+    insert into fantasy_dues (year, account_id, paid, paid_at)
+    values (${year}, ${accountId}, ${paid}, ${paid ? sql`now()` : null})
+    on conflict (year, account_id) do update set paid = ${paid}, paid_at = ${paid ? sql`now()` : null}
+  `;
+}
+
 export async function getLatestStandings(): Promise<{ year: number | null; standings: StandingEntry[] }> {
   const year = await getLatestStandingsYear();
   if (!year) return { year: null, standings: [] };
   const standings = await sql<StandingEntry[]>`
-    select fs.place, coalesce(a.name, fs.display_name) as name, fs.payout_usd::text
+    select fs.place, coalesce(a.name, fs.display_name) as name, fs.payout_usd::text, fs.account_id
     from fantasy_standings fs
     left join accounts a on a.id = fs.account_id
     where fs.year = ${year}

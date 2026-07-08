@@ -2,8 +2,27 @@
 
 import { useEffect, useState } from "react";
 
+const PARTICLES = [
+  { tx: 0, ty: -46, color: "#FFC72C" },
+  { tx: 32, ty: -32, color: "#FFC72C" },
+  { tx: 46, ty: 0, color: "#f4efe2" },
+  { tx: 32, ty: 32, color: "#FFC72C" },
+  { tx: 0, ty: 46, color: "#FFC72C" },
+  { tx: -32, ty: 32, color: "#f4efe2" },
+  { tx: -46, ty: 0, color: "#FFC72C" },
+  { tx: -32, ty: -32, color: "#FFC72C" },
+];
+
 /** Plays once per confirmed spot — tracked in localStorage so refreshing the home page doesn't replay it. */
-export function ClaimCelebration({ gameId, accountId }: { gameId: string; accountId: string }) {
+export function ClaimCelebration({
+  gameId,
+  accountId,
+  subline,
+}: {
+  gameId: string;
+  accountId: string;
+  subline?: string;
+}) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -11,15 +30,15 @@ export function ClaimCelebration({ gameId, accountId }: { gameId: string; accoun
     if (localStorage.getItem(key)) return;
     localStorage.setItem(key, "1");
     setShow(true);
-    const timeout = setTimeout(() => setShow(false), 1600);
+    const timeout = setTimeout(() => setShow(false), 1750);
     return () => clearTimeout(timeout);
   }, [gameId, accountId]);
 
   if (!show) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-16 z-50 flex justify-center">
-      <div className="relative h-[150px] w-[190px]">
+    <div className="claim-backdrop pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-navy/55">
+      <div className="relative h-[170px] w-[190px]">
         <svg
           className="absolute left-1/2 top-0 -translate-x-1/2"
           width="72"
@@ -40,6 +59,16 @@ export function ClaimCelebration({ gameId, accountId }: { gameId: string; accoun
           </g>
         </svg>
 
+        <div className="claim-ring absolute left-1/2 top-[10px] h-[60px] w-[60px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-gold" />
+
+        {PARTICLES.map((p, i) => (
+          <span
+            key={i}
+            className="claim-particle absolute left-1/2 top-[10px] h-[6px] w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ backgroundColor: p.color, "--tx": `${p.tx}px`, "--ty": `${p.ty}px` } as React.CSSProperties}
+          />
+        ))}
+
         <svg className="basketball-arc" width="22" height="22" viewBox="0 0 22 22" fill="none">
           <circle cx="11" cy="11" r="10" fill="#e8742a" stroke="#3a1f0d" strokeWidth="1" />
           <path
@@ -49,9 +78,12 @@ export function ClaimCelebration({ gameId, accountId }: { gameId: string; accoun
           />
         </svg>
 
-        <span className="claim-pop absolute left-1/2 top-[74px] -translate-x-1/2 whitespace-nowrap font-display text-[26px] tracking-wide text-gold">
-          SWISH!
-        </span>
+        <div className="claim-pop absolute left-1/2 top-[80px] flex -translate-x-1/2 flex-col items-center gap-0.5 text-center">
+          <span className="whitespace-nowrap font-display text-[28px] leading-none tracking-wide text-gold">
+            YOU&apos;RE IN!
+          </span>
+          {subline && <span className="whitespace-nowrap text-[12px] font-bold text-cream">{subline}</span>}
+        </div>
       </div>
     </div>
   );

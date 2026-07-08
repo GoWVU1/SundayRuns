@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireAccount } from "@/lib/auth";
-import { getLatestStandings, getCurrentLoser } from "@/lib/fantasy";
+import { getLatestStandings, getCurrentLoser, getLatestChampionAccountId, getBuyInStatus } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
+import { CrownBadge } from "@/components/CrownBadge";
 import { memberNavItems } from "@/lib/nav";
 
 const MEDAL_STYLE: Record<number, { bg: string; color: string; label: string }> = {
@@ -13,7 +14,14 @@ const MEDAL_STYLE: Record<number, { bg: string; color: string; label: string }> 
 
 export default async function FantasyHubPage() {
   const account = await requireAccount();
-  const [{ year, standings }, currentLoser] = await Promise.all([getLatestStandings(), getCurrentLoser()]);
+  const currentYear = new Date().getUTCFullYear();
+  const [{ year, standings }, currentLoser, championAccountId, buyIn] = await Promise.all([
+    getLatestStandings(),
+    getCurrentLoser(),
+    getLatestChampionAccountId(),
+    getBuyInStatus(currentYear),
+  ]);
+  const buyInPaidCount = buyIn.filter((b) => b.paid).length;
 
   return (
     <>
@@ -32,11 +40,8 @@ export default async function FantasyHubPage() {
           )}
           {standings.map((s) => {
             const medal = MEDAL_STYLE[s.place];
-            return (
-              <div
-                key={s.place}
-                className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-navy/30 bg-card px-4 py-3.5"
-              >
+            const row = (
+              <>
                 <div
                   className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-full"
                   style={{ background: medal?.bg }}
@@ -46,18 +51,92 @@ export default async function FantasyHubPage() {
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5">
-                  <span className="text-[15px] font-bold text-navy">{s.name}</span>
+                  <span className="flex items-center gap-1.5 text-[15px] font-bold text-navy">
+                    {s.name}
+                    {s.account_id === championAccountId && <CrownBadge />}
+                  </span>
                   <span className="text-[10px] font-extrabold tracking-wide text-muted">{medal?.label}</span>
                 </div>
                 <span className="font-display text-[22px] text-navy">
                   ${Number(s.payout_usd).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </span>
+                {s.account_id && <span className="text-lg text-navy">›</span>}
+              </>
+            );
+            const rowClass =
+              "flex items-center gap-3.5 rounded-2xl border-[1.5px] border-navy/30 bg-card px-4 py-3.5";
+            return s.account_id ? (
+              <Link key={s.place} href={`/fantasy/champion/${s.account_id}`} className={rowClass}>
+                {row}
+              </Link>
+            ) : (
+              <div key={s.place} className={rowClass}>
+                {row}
               </div>
             );
           })}
+          {standings.some((s) => s.account_id) && (
+            <span className="-mt-2 text-center text-[11px] text-muted">
+              Tap any row to see that finisher&apos;s season recap
+            </span>
+          )}
           <span className="text-center text-[11px] text-muted">
             Payout tiers per Article III of the league contract
           </span>
+
+          <div className="mt-1 flex items-center gap-2.5">
+            <span className="font-display text-[15px] tracking-wide text-navy">{currentYear} BUY-IN STATUS</span>
+            <div className="h-0.5 flex-1 bg-navy" />
+            <span className="text-[11px] font-extrabold text-muted">
+              {buyInPaidCount}/{buyIn.length}
+            </span>
+          </div>
+          <span className="-mt-2 text-[11px] text-muted">
+            Kept public so everyone can see who&apos;s squared up before the draft.
+          </span>
+          <div className="overflow-hidden rounded-2xl border-[1.5px] border-navy/30 bg-card">
+            {buyIn.length === 0 && (
+              <div className="px-3.5 py-4 text-center text-xs text-muted">No fantasy members yet.</div>
+            )}
+            {buyIn.map((b) => (
+              <div
+                key={b.accountId}
+                className="flex items-center gap-3 border-b border-navy/10 px-4 py-[11px] last:border-b-0"
+              >
+                <span className="flex flex-1 items-center gap-1.5 text-sm font-semibold text-navy">
+                  {b.name}
+                  {b.accountId === championAccountId && <CrownBadge />}
+                </span>
+                <span
+                  className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-[9px] font-extrabold tracking-wide ${
+                    b.paid ? "border-success text-success" : "border-danger text-danger"
+                  }`}
+                >
+                  {b.paid ? "PAID" : "UNPAID"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-1 flex items-center gap-2.5">
+            <span className="font-display text-[15px] tracking-wide text-navy">MY FANTASY</span>
+            <div className="h-0.5 flex-1 bg-navy" />
+          </div>
+          <Link
+            href={`/fantasy/champion/${account.id}`}
+            className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-navy/30 bg-card px-4 py-3.5"
+          >
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-navy">
+              <span className="font-display text-[15px] text-gold">$</span>
+            </div>
+            <div className="flex flex-1 flex-col gap-0.5">
+              <span className="font-display text-sm text-navy">MY LIFETIME WINNINGS</span>
+              <span className="text-[11px] text-muted">
+                Every member can see their own all-time total · not just this year&apos;s top 3
+              </span>
+            </div>
+            <span className="text-lg text-navy">›</span>
+          </Link>
 
           <div className="mt-1 flex items-center gap-2.5">
             <span className="font-display text-[15px] tracking-wide text-navy">THE OTHER END</span>
