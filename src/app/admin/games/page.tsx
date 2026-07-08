@@ -11,7 +11,7 @@ export default async function AdminGamesListPage() {
 
   return (
     <>
-      <Header title="MANAGE GAMES" backHref="/admin/game" exitHref="/" />
+      <Header title="MANAGE GAMES" backHref="/admin" exitHref="/" />
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-3.5 px-5 pt-[18px] pb-6">
           <Link

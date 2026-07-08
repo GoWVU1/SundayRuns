@@ -1,7 +1,6 @@
 import "server-only";
 import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
-import { nextSunday6pmUtc } from "@/lib/time";
 import { TIER_ORDER, isRankedTier, type RankedTier } from "@/lib/tiers";
 import type { Account } from "@/lib/accounts";
 
@@ -135,52 +134,6 @@ export async function assertGameVisible(account: Account, gameId: string): Promi
   const match = games.find((g) => g.game.id === gameId);
   if (!match) throw new Error("Game not visible to this account");
   return match;
-}
-
-/** "The" standard game admins manage from the single-editor screen — soonest upcoming standard game. */
-export async function getStandardGame(): Promise<Game | null> {
-  const rows = await sql<Game[]>`
-    select ${sql.unsafe(GAME_FIELDS)} from games
-    where visibility = 'standard' and starts_at > now()
-    order by starts_at asc
-    limit 1
-  `;
-  return rows[0] ?? null;
-}
-
-export async function ensureStandardGame(): Promise<Game> {
-  const existing = await getStandardGame();
-  if (existing) return existing;
-  const rows = await sql<Game[]>`
-    insert into games (starts_at, location, cap, visibility)
-    values (${nextSunday6pmUtc().toISOString()}, '', 16, 'standard')
-    returning ${sql.unsafe(GAME_FIELDS)}
-  `;
-  return rows[0];
-}
-
-export async function updateStandardGame(fields: {
-  startsAt: Date;
-  location: string;
-  address: string;
-}): Promise<Game> {
-  const current = await ensureStandardGame();
-  const rows = await sql<Game[]>`
-    update games set starts_at = ${fields.startsAt.toISOString()}, location = ${fields.location}, address = ${fields.address}
-    where id = ${current.id}
-    returning ${sql.unsafe(GAME_FIELDS)}
-  `;
-  return rows[0];
-}
-
-export async function adjustStandardGameCap(delta: number): Promise<Game> {
-  const current = await ensureStandardGame();
-  const nextCap = Math.max(14, Math.min(17, current.cap + delta));
-  const rows = await sql<Game[]>`
-    update games set cap = ${nextCap} where id = ${current.id}
-    returning ${sql.unsafe(GAME_FIELDS)}
-  `;
-  return rows[0];
 }
 
 /** All games worth managing from the admin list, regardless of visibility mode. */

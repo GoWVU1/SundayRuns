@@ -6,54 +6,20 @@ import { requireAdmin } from "@/lib/auth";
 import { localInputToUtc } from "@/lib/time";
 import { isRankedTier, type RankedTier } from "@/lib/tiers";
 import {
-  adjustStandardGameCap,
   createGame,
   deleteGame,
-  ensureStandardGame,
   setTierUnlockOffset,
   toggleGameOpen,
   updateGame,
   updateGameTemplate,
-  updateStandardGame,
   windowToUnlockOffset,
   type GameVisibility,
 } from "@/lib/games";
 
 function revalidateGameScreens() {
-  revalidatePath("/admin/game");
   revalidatePath("/admin/games");
   revalidatePath("/admin");
   revalidatePath("/");
-}
-
-export async function toggleStandardGameAction() {
-  await requireAdmin();
-  const game = await ensureStandardGame();
-  await toggleGameOpen(game.id);
-  revalidateGameScreens();
-}
-
-export async function updateStandardGameAction(formData: FormData) {
-  await requireAdmin();
-  const startsAtInput = String(formData.get("startsAt") || "");
-  await updateStandardGame({
-    startsAt: localInputToUtc(startsAtInput),
-    location: String(formData.get("location") || ""),
-    address: String(formData.get("address") || ""),
-  });
-  revalidateGameScreens();
-}
-
-export async function capUpAction() {
-  await requireAdmin();
-  await adjustStandardGameCap(1);
-  revalidateGameScreens();
-}
-
-export async function capDownAction() {
-  await requireAdmin();
-  await adjustStandardGameCap(-1);
-  revalidateGameScreens();
 }
 
 export async function toggleGameOpenAction(formData: FormData) {

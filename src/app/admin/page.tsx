@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAccount } from "@/lib/auth";
-import { getStandardGame } from "@/lib/games";
+import { listUpcomingGames } from "@/lib/games";
 import { getRoster } from "@/lib/rsvps";
 import { countAccounts } from "@/lib/accounts";
 import { listPendingGuestRequests } from "@/lib/guests";
@@ -9,16 +9,16 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 
 export default async function AdminDashboardPage() {
-  const [account, game, memberCount, pendingGuests, needingAttendance] = await Promise.all([
+  const [account, games, memberCount, pendingGuests, needingAttendance] = await Promise.all([
     requireAccount(),
-    getStandardGame(),
+    listUpcomingGames(),
     countAccounts(),
     listPendingGuestRequests(),
     getGamesNeedingAttendance(),
   ]);
+  const game = games[0] ?? null;
   const confirmedCount = game ? (await getRoster(game.id)).filter((r) => r.status === "confirmed").length : 0;
   const cap = game?.cap ?? 16;
-  const gameStatusHeadline = game?.is_open ? "GAME IS LIVE" : "GAME ISN'T TOGGLED ON";
 
   return (
     <>
@@ -42,29 +42,6 @@ export default async function AdminDashboardPage() {
               <span className="text-lg text-gold">›</span>
             </Link>
           )}
-          <Link
-            href="/admin/game"
-            className="flex items-center gap-3.5 rounded-2xl border border-gold/30 bg-navy-light px-4 py-3.5"
-          >
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-navy">
-              <div
-                className={`relative h-[13px] w-6 rounded-full border ${
-                  game?.is_open ? "border-gold bg-gold/25" : "border-gold bg-white/15"
-                }`}
-              >
-                <div
-                  className="absolute top-[1px] h-[9px] w-[9px] rounded-full bg-gold transition-all"
-                  style={{ left: game?.is_open ? 13 : 1 }}
-                />
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-0.5">
-              <span className="font-display text-[15px] text-cream">{gameStatusHeadline}</span>
-              <span className="text-[11px] text-muted-navy">Adjust date, time, cap, or flip it on/off</span>
-            </div>
-            <span className="text-lg text-gold">›</span>
-          </Link>
-
           <div className="flex gap-2.5">
             <div className="flex-1 rounded-[14px] border-[1.5px] border-navy/20 bg-card p-3 text-center">
               <span className="block font-display text-2xl text-navy">{memberCount}</span>
