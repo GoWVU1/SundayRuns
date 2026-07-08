@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signupAction, type AuthFormState } from "@/app/actions/auth";
 import { HeaderMark } from "@/components/Logo";
 import { Field } from "@/components/Field";
+import { PasswordField } from "@/components/PasswordField";
 import { PillButton } from "@/components/Button";
 
 const initialState: AuthFormState = {};
@@ -35,13 +36,21 @@ export default function SignupPage() {
             <Field label="LAST NAME" name="lastName" placeholder="Doe" required className="flex-1" />
           </div>
           <Field label="PHONE NUMBER" name="phone" type="tel" placeholder="(555) 000-0000" required />
-          <Field
+          <PasswordField
             label="CHOOSE A PASSWORD"
             name="password"
-            type="password"
             placeholder="At least 6 characters"
             required
           />
+          <label className="flex items-start gap-2.5 text-xs leading-relaxed text-muted">
+            <input type="checkbox" name="agreeToTerms" value="true" required className="mt-0.5 h-4 w-4 accent-navy" />
+            <span>
+              I agree to the{" "}
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline">
+                Terms &amp; Conditions
+              </Link>
+            </span>
+          </label>
           {state.error && <p className="text-center text-[12px] font-semibold text-danger">{state.error}</p>}
           <PillButton type="submit" disabled={pending} className="mt-1">
             {pending ? "SIGNING UP…" : "SIGN ME UP"}

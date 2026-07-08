@@ -20,11 +20,13 @@ export async function signupAction(
   const lastName = String(formData.get("lastName") || "").trim();
   const phone = String(formData.get("phone") || "");
   const password = String(formData.get("password") || "");
+  const agreeToTerms = formData.get("agreeToTerms") === "true";
 
   if (!firstName) return { error: "Enter your first name." };
   if (!lastName) return { error: "Enter your last name." };
   if (normalizePhone(phone).length < 10) return { error: "Enter a valid phone number." };
   if (password.length < 6) return { error: "Password must be at least 6 characters." };
+  if (!agreeToTerms) return { error: "You must agree to the Terms & Conditions." };
 
   const existing = await findAccountByPhone(phone);
   if (existing) {

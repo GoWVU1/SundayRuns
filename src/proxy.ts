@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server";
 import { COOKIE_NAME, getAccountForToken } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/signup"];
+// Informational, not an auth form — viewable whether logged in or not, unlike PUBLIC_PATHS
+// (which bounces an already-logged-in visitor back to "/").
+const ALWAYS_ACCESSIBLE_PATHS = ["/terms"];
 
 // Proxy defaults to the Node.js runtime in Next 16, so we can do the real
 // session + admin check here instead of just a cookie-presence guess. Server
@@ -11,6 +14,8 @@ const PUBLIC_PATHS = ["/login", "/signup"];
 // request and a privileged mutation.
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (ALWAYS_ACCESSIBLE_PATHS.includes(pathname)) return NextResponse.next();
+
   const isPublic = PUBLIC_PATHS.includes(pathname);
   const account = await getAccountForToken(request.cookies.get(COOKIE_NAME)?.value);
 
