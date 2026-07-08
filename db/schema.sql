@@ -300,3 +300,24 @@ References: PF = Points For. PA = Points Against. ESPN tie-breaking rules: suppo
 -- The one-time fix for rows already seeded with the old 4-article placeholder
 -- content lives in scripts/seed-contract.mjs, run once by hand.
 on conflict (article_number) do nothing;
+
+-- ============================================================
+-- Stage E — first/last name captured separately at signup
+-- ============================================================
+-- accounts.name stays the source of truth for display ("First L.") so
+-- nothing else in the app needs to change — first_name/last_name are purely
+-- structured storage for the commissioner's own reference.
+alter table accounts add column if not exists first_name text not null default '';
+alter table accounts add column if not exists last_name text not null default '';
+
+-- One-time backfill for rows that predate these columns: best-effort split
+-- of the existing free-text name on the first space. Guarded by
+-- first_name = '' so it's a no-op once backfilled or on freshly-inserted rows.
+update accounts
+set first_name = split_part(name, ' ', 1),
+    last_name = trim(substring(name from position(' ' in name) + 1))
+where first_name = '' and last_name = '' and position(' ' in name) > 0;
+
+update accounts
+set first_name = name
+where first_name = '' and last_name = '' and position(' ' in name) = 0;

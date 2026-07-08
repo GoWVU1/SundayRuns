@@ -16,11 +16,13 @@ export async function signupAction(
   _prevState: AuthFormState,
   formData: FormData
 ): Promise<AuthFormState> {
-  const name = String(formData.get("name") || "").trim();
+  const firstName = String(formData.get("firstName") || "").trim();
+  const lastName = String(formData.get("lastName") || "").trim();
   const phone = String(formData.get("phone") || "");
   const password = String(formData.get("password") || "");
 
-  if (!name) return { error: "Enter your name." };
+  if (!firstName) return { error: "Enter your first name." };
+  if (!lastName) return { error: "Enter your last name." };
   if (normalizePhone(phone).length < 10) return { error: "Enter a valid phone number." };
   if (password.length < 6) return { error: "Password must be at least 6 characters." };
 
@@ -37,7 +39,7 @@ export async function signupAction(
     return { error: "That phone number is already registered — try logging in instead." };
   }
 
-  const account = await createAccount(name, phone, password);
+  const account = await createAccount(firstName, lastName, phone, password);
   await createSession(account.id);
   redirect("/");
 }

@@ -30,7 +30,10 @@ export default function SignupPage() {
         </p>
 
         <div className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-navy/30 bg-card p-[18px]">
-          <Field label="YOUR NAME" name="name" placeholder="First name + last initial" required />
+          <div className="flex gap-3">
+            <Field label="FIRST NAME" name="firstName" placeholder="Jackson" required className="flex-1" />
+            <Field label="LAST NAME" name="lastName" placeholder="Noland" required className="flex-1" />
+          </div>
           <Field label="PHONE NUMBER" name="phone" type="tel" placeholder="(555) 000-0000" required />
           <Field
             label="CHOOSE A PASSWORD"

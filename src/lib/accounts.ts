@@ -3,11 +3,14 @@ import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import type { RankedTier } from "@/lib/tiers";
 
-const ACCOUNT_FIELDS = "id, name, phone, password_hash, is_admin, tier, fantasy_member, created_at";
+const ACCOUNT_FIELDS =
+  "id, name, first_name, last_name, phone, password_hash, is_admin, tier, fantasy_member, created_at";
 
 export type Account = {
   id: string;
   name: string;
+  first_name: string;
+  last_name: string;
   phone: string;
   /** Null for guest accounts — they never self-serve signup, so they have no password. */
   password_hash: string | null;
@@ -35,11 +38,14 @@ export async function findAccountById(accountId: string) {
   return rows[0] ?? null;
 }
 
-export async function createAccount(name: string, phone: string, password: string) {
+export async function createAccount(firstName: string, lastName: string, phone: string, password: string) {
   const passwordHash = await hashPassword(password);
+  const first = firstName.trim();
+  const last = lastName.trim();
+  const displayName = `${first} ${last.charAt(0)}.`;
   const rows = await sql<Account[]>`
-    insert into accounts (name, phone, password_hash)
-    values (${name.trim()}, ${normalizePhone(phone)}, ${passwordHash})
+    insert into accounts (name, first_name, last_name, phone, password_hash)
+    values (${displayName}, ${first}, ${last}, ${normalizePhone(phone)}, ${passwordHash})
     returning ${sql.unsafe(ACCOUNT_FIELDS)}
   `;
   return rows[0];
