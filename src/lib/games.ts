@@ -173,11 +173,17 @@ async function writeAllowlist(tx: TransactionSql, gameId: string, fields: GameFo
   await tx`delete from game_visible_tiers where game_id = ${gameId}`;
   await tx`delete from game_visible_accounts where game_id = ${gameId}`;
   if (fields.visibility !== "restricted") return;
-  for (const tier of fields.visibleTiers ?? []) {
-    await tx`insert into game_visible_tiers (game_id, tier) values (${gameId}, ${tier})`;
+
+  const tiers = fields.visibleTiers ?? [];
+  const accountIds = fields.visibleAccountIds ?? [];
+
+  if (tiers.length > 0) {
+    const rows = tiers.map((tier) => ({ game_id: gameId, tier }));
+    await tx`insert into game_visible_tiers ${tx(rows, "game_id", "tier")}`;
   }
-  for (const accountId of fields.visibleAccountIds ?? []) {
-    await tx`insert into game_visible_accounts (game_id, account_id) values (${gameId}, ${accountId})`;
+  if (accountIds.length > 0) {
+    const rows = accountIds.map((account_id) => ({ game_id: gameId, account_id }));
+    await tx`insert into game_visible_accounts ${tx(rows, "game_id", "account_id")}`;
   }
 }
 

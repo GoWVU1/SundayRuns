@@ -80,6 +80,10 @@ alter table games add constraint games_visibility_check
   check (visibility in ('standard', 'restricted'));
 alter table games add column if not exists created_by uuid references accounts(id) on delete set null;
 
+-- Every page load and claim/cancel action filters+sorts games on starts_at
+-- (see fetchCandidateGames in src/lib/games.ts).
+create index if not exists games_starts_at_idx on games(starts_at);
+
 -- Restricted-game allow-lists — two combinable mechanisms, only populated
 -- when visibility = 'restricted'.
 create table if not exists game_visible_tiers (
