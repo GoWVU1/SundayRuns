@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #041e42;
+  --color-navy-light: #0f284b;
+  --color-gold: #ffc72c;
+  --color-cream: #f4efe2;
+  --color-card: #fffdf7;
+  --color-muted: #6b6353;
+  --color-muted-navy: #8ea4c7;
+  --color-danger: #b3261e;
+  --color-danger-light: #ff8a80;
+  --color-success: #15803d;
+
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-bebas), sans-serif;
+}
+
+html,
+body {
+  background: var(--color-navy);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.6;
+}
