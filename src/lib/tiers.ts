@@ -13,8 +13,8 @@ export const TIER_ORDER: RankedTier[] = ["core", "regular", "extended"];
 // admin-configurable per tier via tier_guest_settings.
 export const TIER_LABELS: Record<Tier, string> = {
   core: "HALL OF FAME",
-  regular: "VETERANS",
-  extended: "ROOKIES",
+  regular: "VETERAN",
+  extended: "ROOKIE",
   guest: "GUEST",
 };
 
