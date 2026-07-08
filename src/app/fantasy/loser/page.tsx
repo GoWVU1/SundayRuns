@@ -5,10 +5,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Card } from "@/components/Card";
 import { Ring } from "@/components/Ring";
-import { PillButton } from "@/components/Button";
-import { Field } from "@/components/Field";
 import { memberNavItems } from "@/lib/nav";
-import { markLoserCompletedAction, markLoserStartedAction, startNewLoserAction } from "@/app/actions/fantasy";
 
 export default async function FantasyLoserPage() {
   const account = await requireAccount();
@@ -107,23 +104,6 @@ export default async function FantasyLoserPage() {
                   Loser can&apos;t repeat this pick or their own past one.
                 </span>
               </div>
-
-              {account.is_admin && (
-                <div className="flex gap-2.5">
-                  <form action={markLoserStartedAction} className="flex-1">
-                    <input type="hidden" name="id" value={current.id} />
-                    <PillButton type="submit" variant="navy" disabled={!!current.started_at}>
-                      {current.started_at ? "STARTED" : "MARK STARTED"}
-                    </PillButton>
-                  </form>
-                  <form action={markLoserCompletedAction} className="flex-1">
-                    <input type="hidden" name="id" value={current.id} />
-                    <PillButton type="submit" variant="gold" disabled={!!current.completed_at}>
-                      {current.completed_at ? "DONE" : "MARK COMPLETED"}
-                    </PillButton>
-                  </form>
-                </div>
-              )}
             </>
           )}
 
@@ -137,20 +117,6 @@ export default async function FantasyLoserPage() {
             </div>
             <span className="text-lg text-navy">›</span>
           </Link>
-
-          {account.is_admin && !current && (
-            <form
-              action={startNewLoserAction}
-              className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-navy/30 bg-card p-[18px]"
-            >
-              <span className="text-[10px] font-extrabold tracking-[2px] text-muted">START A NEW LOSER (ADMIN)</span>
-              <Field label="YEAR" name="year" type="number" defaultValue={new Date().getUTCFullYear()} />
-              <Field label="LOSER'S NAME" name="displayName" placeholder="Name" />
-              <PillButton type="submit" variant="navy">
-                SET CURRENT LOSER
-              </PillButton>
-            </form>
-          )}
         </div>
       </main>
       <BottomNav items={memberNavItems(account, "FANTASY")} />

@@ -3,7 +3,6 @@ import { getCurrentLoser, getOffLimitsPunishments, PUNISHMENTS } from "@/lib/fan
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { memberNavItems } from "@/lib/nav";
-import { pickPunishmentAction } from "@/app/actions/fantasy";
 
 export default async function FantasyPunishmentsPage() {
   const account = await requireAccount();
@@ -17,13 +16,11 @@ export default async function FantasyPunishmentsPage() {
         <div className="flex flex-col gap-3.5 px-5 pt-[18px] pb-6">
           <span className="text-xs leading-relaxed text-muted">
             Five choices, per Article IV. Greyed-out picks are off-limits under Section 4.4.
-            {account.is_admin && current && !current.punishment && " Tap one to set the Loser's pick."}
           </span>
 
           {PUNISHMENTS.map((p) => {
             const off = offLimits.find((o) => o.key === p.key);
             const selected = current?.punishment === p.key;
-            const canPick = account.is_admin && !!current && !current.punishment && !off;
 
             const card = (
               <div
@@ -57,17 +54,7 @@ export default async function FantasyPunishmentsPage() {
               </div>
             );
 
-            if (!canPick) return <div key={p.key}>{card}</div>;
-
-            return (
-              <form key={p.key} action={pickPunishmentAction}>
-                <input type="hidden" name="id" value={current!.id} />
-                <input type="hidden" name="punishment" value={p.key} />
-                <button type="submit" className="w-full text-left">
-                  {card}
-                </button>
-              </form>
-            );
+            return <div key={p.key}>{card}</div>;
           })}
         </div>
       </main>

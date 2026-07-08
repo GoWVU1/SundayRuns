@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireAccount } from "@/lib/auth";
 import { getStandardGame } from "@/lib/games";
 import { getRoster } from "@/lib/rsvps";
 import { countAccounts } from "@/lib/accounts";
@@ -8,7 +9,8 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 
 export default async function AdminDashboardPage() {
-  const [game, memberCount, pendingGuests, needingAttendance] = await Promise.all([
+  const [account, game, memberCount, pendingGuests, needingAttendance] = await Promise.all([
+    requireAccount(),
     getStandardGame(),
     countAccounts(),
     listPendingGuestRequests(),
@@ -105,6 +107,16 @@ export default async function AdminDashboardPage() {
                   : `${needingAttendance.length} game${needingAttendance.length === 1 ? "" : "s"} need${needingAttendance.length === 1 ? "s" : ""} it`}
               </span>
             </Link>
+            {account.fantasy_member && (
+              <Link
+                href="/admin/fantasy"
+                className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
+              >
+                <div className="h-5 w-5 rounded-full border-[3px] border-navy" />
+                <span className="font-display text-[13px] tracking-wide text-navy">MANAGE FANTASY</span>
+                <span className="text-[10px] text-muted">Standings, loser, contract</span>
+              </Link>
+            )}
           </div>
         </div>
       </main>

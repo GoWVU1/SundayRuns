@@ -257,46 +257,136 @@ Section 3.2 – Determination of League Loser
 The individual designated as the “League Loser” shall be the Owner whose team accrues the fewest total points in the consolation ladder during the postseason, as modified by a point adjustment system. For purposes of this determination, each team participating in the consolation ladder shall receive a bonus of twenty-five (25) points for each seed position above the lowest seed. The Owner with the lowest aggregate score after application of this adjustment shall be deemed the League Loser and shall be subject to the punishment requirements set forth herein.
 
 Section 3.3 – Punishment Obligation and Enforcement
-The League Loser shall be required to complete a punishment as prescribed below. The following timelines and enforcement mechanisms shall govern:
+The League Loser shall be required to complete a punishment as prescribed in Article V of this Agreement. The following timelines and enforcement mechanisms shall govern:
 
 (a) The League Loser shall commence, in good faith, verifiable steps toward the initiation of the selected punishment within sixty (60) days following the conclusion of the fantasy football season.
 
 (b) The League Loser shall fully complete the selected punishment no later than three hundred thirty (330) days following the League draft date for that season.
 
-(c) In the event the League Loser fails to meet the deadlines in subsections (a) or (b), the following sanctions shall apply: a liquidated penalty of Ten Dollars ($10.00), due and payable to the League upon breach of the deadline; accrual of interest on said penalty at a rate of ten percent (10%) per annum, calculated from the sixtieth (60th) day following the end of the fantasy season and continuing until the date of full satisfaction; and potential expulsion from the League, subject to a majority vote of all non-losing League Members, such vote to be binding and final.
+(c) In the event the League Loser fails to meet the deadlines in subsections (a) or (b), the following sanctions shall apply:
+
+A liquidated penalty of Ten Dollars ($10.00), which shall be due and payable to the League upon breach of the deadline; and
+
+Accrual of interest on said penalty at a rate of ten percent (10%) per annum, calculated from the sixtieth (60th) day following the end of the fantasy season and continuing until the date of full satisfaction; and
+
+Potential expulsion from the League, subject to a majority vote of all non-losing League Members, such vote to be binding and final.
 
 Section 3.4 – Selection and Limitations
-The League Loser shall be required to select and complete one (1) of the enumerated punishments set forth herein. The following restrictions shall govern the selection process:
+The League Loser, as determined pursuant to Article IV, shall be required to select and complete one (1) of the enumerated punishments set forth herein. The following restrictions shall govern the selection process:
 
 (a) The selected punishment shall be subject to a single veto by a three-fourths (¾) supermajority vote of the non-losing League Members, such vote to be conducted within seven (7) days of the League Loser’s declared selection.
+
 (b) No League Loser shall be permitted to select a punishment that was completed by the League Loser in the immediately preceding League year.
+
 (c) No League Loser shall select the same punishment they personally selected in any prior League year.
 
 Section 3.5 – Enumerated Punishments
 
 3.5.1 – ACT Examination Requirement
-The League Loser shall register for and complete an official paper-based ACT examination, including the Test Information Release (TIR) package, at a testing center within fifteen (15) miles of the League Loser’s primary residence (or the nearest alternative). A composite score of twenty-one (21) or higher is required. A score of seventeen (17)–twenty (20) requires a follow-up practice ACT with a composite of at least 21. A score of sixteen (16) or below requires retaking the official ACT under the same conditions. All score reports, including the TIR, must be provided to the League for verification.
+The League Loser shall register for and complete an official paper-based ACT examination, including the Test Information Release (TIR) package. The examination must be administered at a testing center located within fifteen (15) miles of the League Loser’s primary residence. If no such location exists, the nearest alternative testing center is permissible.
 
-3.5.2 – PACER Test Requirement
-The League Loser shall complete the FitnessGram® 20-meter PACER Test per the official manual, at a public park, with the official PACER audio cadence played via portable speaker at maximum volume throughout. A minimum score of seventy-five (75) laps is required, with every attempt fully recorded on video. If 75 is not reached, a new attempt shall be made at least once every three (3) calendar days until a qualifying video is submitted.
+To fulfill the obligation:
 
-3.5.3 – Twenty-Four (24) Hours in Waffle House
-The League Loser shall spend twenty-four (24) consecutive hours within a Waffle House® location, livestreamed publicly and continuously on Twitch® from the time of seating, with credentials provided to the League beforehand. One (1) hour is deducted from the required duration for each waffle consumed on-site.
+The League Loser must achieve a composite score of twenty-one (21) or higher.
+
+If the League Loser scores between seventeen (17) and twenty (20), a follow-up practice ACT exam must be completed with a composite score of at least twenty-one (21).
+
+If the initial composite score is sixteen (16) or below, the League Loser shall be required to retake the official ACT under the same conditions.
+
+All score reports, including the TIR and testing documentation, must be provided to the League for verification. Failure to comply shall constitute non-completion of punishment.
+
+3.2.2 – PACER Test Requirement
+The League Loser shall complete the FitnessGram® 20-meter Progressive Aerobic Cardiovascular Endurance Run (PACER) Test in accordance with the official FitnessGram® PACER Test Manual. The following additional requirements apply:
+
+The test shall be conducted at a public park.
+
+The official PACER audio cadence shall be played via portable speaker at maximum volume throughout the test.
+
+A minimum score of seventy-five (75) laps must be achieved for successful completion.
+
+Each attempt must be fully recorded on video and transmitted to the League for verification.
+
+If the League Loser fails to reach a score of 75, a new attempt shall be made at least once every three (3) calendar days until successful completion is achieved. The punishment shall not be deemed satisfied until a qualifying video is submitted to the League.
+
+5.5.3 – Twenty-Four (24) Hours in Waffle House
+The League Loser shall spend twenty-four (24) consecutive hours within a Waffle House® franchise location owned and operated by Waffle House, Inc. The following conditions shall apply:
+
+One (1) hour shall be deducted from the required duration for each waffle consumed on-site during the punishment period.
+
+The League Loser must livestream the entire punishment session publicly on Twitch® beginning from the time of seating.
+
+The stream must remain continuously live, and access credentials shall be provided to the League prior to commencement.
+
+The punishment shall be deemed completed upon the conclusion of a livestreamed session equating to twenty-four (24) hours, reduced by one (1) hour per waffle consumed.
 
 3.5.4 – “Hot Ones” Challenge
-The League Loser shall complete a mock “Hot Ones” interview-style challenge: at least ten (10) rounds, each with a different official Hot Ones™ sauce on a wing (or non-meat substitute), followed by 3–5 questions from an interviewer. Non-losing League Members may each submit questions for one round; the final round is composed collectively by the League. If offered the chance to complete this challenge as part of a real media interview, the League Loser must select this punishment unless it was picked by the prior year’s Loser or already completed by the current Loser previously. Completion requires a full video submitted to the League group chat.
+The League Loser shall participate in a mock version of the “Hot Ones” interview-style hot sauce challenge. The following rules shall apply:
+
+The challenge shall consist of at least ten (10) rounds, each featuring a different official Hot Ones™ sauce applied liberally to a chicken wing or reasonable non-meat substitute.
+
+After consumption of each sauce, the League Loser shall respond to three (3) to five (5) questions posed by an interviewer.
+
+Each non-losing League Member shall be entitled to prepare questions for one round. Members may opt out. The final round of questions shall be composed collectively by the League.
+
+The interviewer shall not be required to consume any sauces.
+
+In the event the League Loser is offered the opportunity to complete the challenge as part of a media interview (e.g., WJHL, East Tennessean) with the intent to publish or broadcast the segment, the League Loser must select this punishment unless it was (i) selected by the prior year's Loser or (ii) already completed by the current Loser in a prior year. The League may submit three (3) to five (5) questions to be asked during the media interview.
+
+The punishment shall be deemed completed only upon submission of a full video recording of the challenge to the League group chat and confirmation that all sauce rounds and interview questions have been truthfully attempted in good faith.
 
 3.5.5 – Bodybuilding Competition
-The League Loser shall register for and compete in an officially sanctioned bodybuilding competition (OCB, IFBB, or similar), in Men’s Physique, Men’s Classic Physique, or Men’s Bodybuilding. A complete, unedited video of the participation — including final placement, if applicable — must be submitted to the League.
+The League Loser shall register for and participate in an officially sanctioned bodybuilding competition under the governance of the Organization of Competitive Bodybuilders (OCB), International Federation of Bodybuilding and Fitness (IFBB), or a substantially similar regulatory body. Acceptable divisions include:
+
+Men’s Physique
+
+Men’s Classic Physique
+
+Men’s Bodybuilding
+
+A complete and unedited video of the League Loser’s participation, including all competition rounds and, if applicable, final placement, shall be submitted to the League. The punishment shall not be considered complete without full and timely submission of said video.
 
 Section 3.6 – Reimbursement of Costs Associated with Punishment
-Each Owner contributes Five Dollars ($5.00) of their annual dues to a collective “Reimbursement Bank.” Disbursements reimburse the League Loser for the minimum objectively necessary cost of completing their punishment, upon submission of proof of completion (test scores, video, livestream links, receipts, or registration confirmations) and itemized cost evidence. Non-essential upgrades or personal expenditures (flavored waffles, hashbrowns, sodas, upgraded gear, apparel, etc.) are excluded and borne solely by the League Loser. Reimbursements cannot exceed the Bank’s balance; any excess cost is the Loser’s sole responsibility. Remaining funds roll over to the next League year. A full accounting of the Bank is provided to all Owners between the annual draft and the start of Week One.
+(a) The League acknowledges that certain punishments required of the League Loser may involve financial expense. To mitigate such burden, each Owner shall contribute Five Dollars ($5.00) from their annual League dues toward a collective reimbursement reserve (the “Reimbursement Bank”).
+
+(b) Disbursements from the Reimbursement Bank shall be made solely for the purpose of reimbursing the League Loser for the minimum objectively necessary cost of completing their selected punishment, and only upon the following conditions:
+
+(i) Submission to the League Manager of documentary proof of the punishment’s completion, which may include but is not limited to: test scores, video recordings, livestream links, receipts, or event registration confirmations;
+
+(ii) Submission of itemized receipts or reasonable cost evidence for reimbursable expenses.
+
+(c) Reimbursement shall be limited strictly to the minimum costs required to fulfill the punishment. Non-essential upgrades, add-ons, or personal expenditures (e.g., flavored waffles, hashbrowns, sodas, upgraded gear, apparel, etc.) shall be borne solely by the League Loser and are expressly excluded from reimbursement.
+
+(d) Reimbursements shall not exceed the total amount available in the Reimbursement Bank. Any costs incurred above said amount shall be the sole and exclusive responsibility of the League Loser. Funds remaining in the Reimbursement Bank after reimbursement shall roll over and be added to the next League year's balance.
+
+(e) A full accounting of the Reimbursement Bank’s balance shall be provided to all Owners between the annual draft and the start of Week One each season.
 
 Section 3.7 – Collection and Enforcement of League Dues
-All dues are due in full (Zelle® or cash — no partial payments) prior to Week One. Unpaid balances after Week Thirteen (13) accrue daily compounding interest at five percent (5%) per day, deposited into the Reimbursement Bank. Any Owner unpaid before the start of Playoffs is immediately and irrevocably eliminated from playoff contention, forfeits any claim to Reimbursement Bank funds, is subject to expulsion (reinstatable only by unanimous vote of paying Owners), and continues to accrue interest.
+(a) All League dues shall be paid in full to the League Manager prior to the commencement of Week One of the regular season. Accepted methods of payment are Zelle® or cash. Partial payments are expressly prohibited and shall be deemed noncompliant.
+
+(b) Any Owner who fails to remit full payment by the conclusion of Week Thirteen (13) shall incur daily compounding interest at a rate of five percent (5%) per day on the unpaid principal amount. Accrued interest shall be deposited into the Reimbursement Bank.
+
+(c) Any Owner who fails to remit full payment prior to the start of the League Playoffs shall be subject to the following mandatory penalties, without further notice:
+
+(i) Immediate and irrevocable elimination from playoff contention;
+
+(ii) Forfeiture of any and all claims to reimbursement from the Reimbursement Bank;
+
+(iii) Expulsion from future participation in the League, subject to reinstatement by unanimous vote of all paying Owners; and
+
+(iv) Continued accrual of penalties and interest as described in subsection (b).
 
 Section 3.8 – Disbursement of Prizes and Reimbursements
-Prize payouts are distributed within thirty (30) calendar days following the League Championship, contingent on full payment of dues by all Owners. If dues are outstanding, payouts may be delayed or reduced; any remaining Reimbursement Bank funds are applied first to the First Place prize, then Second, then Third. Punishment reimbursements are issued within thirty (30) calendar days of the League Manager receiving all required proof and documentation.
+(a) The League shall distribute all prize payouts listed in Section 4.1 within thirty (30) calendar days following the conclusion of the League Championship, contingent upon full payment of dues by all Owners and the absence of any breach of this Agreement by the recipient.
+
+(b) In the event one or more Owners fail to remit dues, full prize payouts may be delayed or reduced. In such event, the League shall apply funds remaining in the Reimbursement Bank, if any, to supplement prize payments in the following priority:
+
+(i) First Place prize;
+
+(ii) Second Place prize;
+
+(iii) Third Place prize.
+
+(c) Reimbursements for completed punishments shall be issued within thirty (30) calendar days of submission of all required proof and documentation to the League Manager.
 
 References: PF = Points For. PA = Points Against. ESPN tie-breaking rules: support.espn.com (Playoff Seeding / How Regular Season Standings Tiebreakers Work). FitnessGram PACER Test Manual: nova.edu/projectrise. Hot Ones official sauces: heatonist.com.$article3$)
 -- do nothing, not do update: this file gets re-run on every migrate, and must

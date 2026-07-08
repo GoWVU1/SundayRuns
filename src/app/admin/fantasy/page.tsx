@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { requireAccount } from "@/lib/auth";
 import { getLatestStandings, getCurrentLoser } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { memberNavItems } from "@/lib/nav";
+import { StandingsAdminForm } from "@/components/fantasy/StandingsAdminForm";
 
 const MEDAL_STYLE: Record<number, { bg: string; color: string; label: string }> = {
   1: { bg: "#FFC72C", color: "#041E42", label: "CHAMPION" },
@@ -11,13 +10,12 @@ const MEDAL_STYLE: Record<number, { bg: string; color: string; label: string }> 
   3: { bg: "#c98a4b", color: "#f4efe2", label: "THIRD PLACE" },
 };
 
-export default async function FantasyHubPage() {
-  const account = await requireAccount();
+export default async function AdminFantasyPage() {
   const [{ year, standings }, currentLoser] = await Promise.all([getLatestStandings(), getCurrentLoser()]);
 
   return (
     <>
-      <Header title="SUNDAY RUNS" subtitle="SUNDAY RUNS FANTASY LEAGUE" tag="FANTASY" />
+      <Header title="MANAGE FANTASY" backHref="/admin" exitHref="/" />
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-[18px] p-5">
           <div className="flex items-center gap-2.5">
@@ -55,9 +53,8 @@ export default async function FantasyHubPage() {
               </div>
             );
           })}
-          <span className="text-center text-[11px] text-muted">
-            Payout tiers per Article III of the league contract
-          </span>
+
+          <StandingsAdminForm defaultYear={year ?? new Date().getUTCFullYear()} />
 
           <div className="mt-1 flex items-center gap-2.5">
             <span className="font-display text-[15px] tracking-wide text-navy">THE OTHER END</span>
@@ -65,14 +62,14 @@ export default async function FantasyHubPage() {
           </div>
 
           <Link
-            href="/fantasy/loser"
+            href="/admin/fantasy/loser"
             className="flex items-center gap-3.5 rounded-2xl border border-gold/30 bg-navy px-4 py-3.5 text-left"
           >
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold">
               <span className="font-display text-base text-navy">L</span>
             </div>
             <div className="flex flex-1 flex-col gap-0.5">
-              <span className="font-display text-[15px] text-cream">CURRENT LEAGUE LOSER</span>
+              <span className="font-display text-[15px] text-cream">MANAGE LEAGUE LOSER</span>
               <span className="text-[11px] text-muted-navy">
                 {currentLoser ? `${currentLoser.loser_name} is on the clock` : "Nobody's currently on the clock"}
               </span>
@@ -80,27 +77,24 @@ export default async function FantasyHubPage() {
             <span className="text-lg text-gold">›</span>
           </Link>
 
-          <div className="flex gap-2.5">
-            <Link
-              href="/fantasy/punishments"
-              className="flex flex-1 flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
-            >
-              <div className="h-1 w-[26px] rounded-full bg-navy" />
-              <span className="font-display text-[13px] tracking-wide text-navy">PUNISHMENTS</span>
-              <span className="text-[10px] text-muted">5 options, some off-limits</span>
-            </Link>
-            <Link
-              href="/fantasy/contract"
-              className="flex flex-1 flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
-            >
-              <div className="h-1 w-[26px] rounded-full bg-gold" />
-              <span className="font-display text-[13px] tracking-wide text-navy">THE CONTRACT</span>
-              <span className="text-[10px] text-muted">Rules &amp; Regulations 2.0</span>
-            </Link>
-          </div>
+          <Link
+            href="/admin/fantasy/contract"
+            className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
+          >
+            <div className="h-1 w-[26px] rounded-full bg-gold" />
+            <span className="font-display text-[13px] tracking-wide text-navy">EDIT THE CONTRACT</span>
+            <span className="text-[10px] text-muted">Rules &amp; Regulations 2.0</span>
+          </Link>
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "FANTASY")} />
+      <BottomNav
+        items={[
+          { label: "DASH", href: "/admin", active: false },
+          { label: "GAMES", href: "/admin/games", active: false },
+          { label: "GUESTS", href: "/admin/guests", active: false },
+          { label: "MEMBERS", href: "/admin/members", active: false },
+        ]}
+      />
     </>
   );
 }

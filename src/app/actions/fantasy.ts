@@ -19,6 +19,8 @@ function revalidateFantasy() {
   revalidatePath("/fantasy/loser");
   revalidatePath("/fantasy/punishments");
   revalidatePath("/fantasy/history");
+  revalidatePath("/admin/fantasy");
+  revalidatePath("/admin/fantasy/loser");
 }
 
 export async function setStandingAction(formData: FormData) {
@@ -81,4 +83,5 @@ export async function updateContractArticleAction(formData: FormData) {
 
   await updateContractArticle(articleNumber, body);
   revalidatePath("/fantasy/contract");
+  revalidatePath("/admin/fantasy/contract");
 }
