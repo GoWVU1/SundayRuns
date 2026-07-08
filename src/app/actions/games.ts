@@ -12,6 +12,7 @@ import {
   ensureStandardGame,
   toggleGameOpen,
   updateGame,
+  updateGameTemplate,
   updateStandardGame,
   type GameVisibility,
 } from "@/lib/games";
@@ -95,4 +96,24 @@ export async function updateGameAction(formData: FormData) {
   await updateGame(gameId, fields);
   revalidateGameScreens();
   redirect("/admin/games");
+}
+
+export async function updateGameTemplateAction(formData: FormData) {
+  await requireAdmin();
+  const slotRaw = Number(formData.get("slot"));
+  if (slotRaw !== 1 && slotRaw !== 2) return;
+
+  const rawCap = Number(formData.get("cap"));
+  const cap = Number.isFinite(rawCap) ? Math.max(1, Math.min(50, Math.round(rawCap))) : 16;
+
+  await updateGameTemplate({
+    slot: slotRaw,
+    name: String(formData.get("name") || "").trim() || `Template ${slotRaw}`,
+    location: String(formData.get("location") || ""),
+    cap,
+    visibility: (String(formData.get("visibility") || "standard") as GameVisibility),
+    visibleTiers: formData.getAll("visibleTiers").map(String).filter(isRankedTier) as RankedTier[],
+  });
+  revalidatePath("/admin/games");
+  revalidatePath("/admin/games/new");
 }

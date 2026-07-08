@@ -3,7 +3,8 @@ import { requireAccount } from "@/lib/auth";
 import { getNextVisibleGame } from "@/lib/games";
 import { getRoster } from "@/lib/rsvps";
 import { formatGameDateTime, formatUnlockLabel } from "@/lib/time";
-import { TIER_LABELS, canSponsorGuest, isRankedTier } from "@/lib/tiers";
+import { TIER_LABELS, isRankedTier } from "@/lib/tiers";
+import { canSponsorGuest } from "@/lib/guests";
 import { getAttendanceStreaks } from "@/lib/attendance";
 import { getLatestChampionAccountId } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
@@ -14,6 +15,7 @@ import { PillButton, TagButton } from "@/components/Button";
 import { RosterRow } from "@/components/RosterRow";
 import { PushOptIn } from "@/components/PushOptIn";
 import { ClaimCelebration } from "@/components/ClaimCelebration";
+import { AddToCalendar } from "@/components/AddToCalendar";
 import { claimSpotAction, cancelRsvpAction } from "@/app/actions/rsvp";
 import { hasActiveSubscription } from "@/lib/push";
 import { memberNavItems } from "@/lib/nav";
@@ -34,9 +36,10 @@ export default async function HomePage() {
   const waitlisted = roster.filter((r) => r.status === "waitlisted");
   const mine = roster.find((r) => r.account_id === account.id) ?? null;
 
-  const [streaks, championAccountId] = await Promise.all([
+  const [streaks, championAccountId, canInvite] = await Promise.all([
     getAttendanceStreaks(confirmed.map((r) => r.account_id)),
     getLatestChampionAccountId(),
+    canSponsorGuest(account.tier),
   ]);
 
   const cap = game?.cap ?? 16;
@@ -86,6 +89,9 @@ export default async function HomePage() {
                 </span>
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
               </div>
+              <div className="mt-3">
+                <AddToCalendar game={game} />
+              </div>
               <div className="my-4 h-px bg-gold/20" />
               <span className="font-display text-lg tracking-wide text-gold">
                 YOUR WINDOW OPENS {windowOpensAt ? formatUnlockLabel(windowOpensAt) : "SOON"}
@@ -109,6 +115,9 @@ export default async function HomePage() {
                   {formatGameDateTime(game.starts_at)}
                 </span>
                 <span className="text-xs text-muted-navy">{game.location || "Location TBD"}</span>
+              </div>
+              <div className="mt-3">
+                <AddToCalendar game={game} />
               </div>
               <div className="my-4 h-px bg-gold/20" />
               <div className="flex items-center gap-5">
@@ -160,6 +169,7 @@ export default async function HomePage() {
                   <span className="text-xs text-muted-navy">{game.location}</span>
                 </div>
               </div>
+              <AddToCalendar game={game} />
               <div className="h-px bg-gold/25" />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-navy">Can&apos;t make it anymore?</span>
@@ -182,6 +192,7 @@ export default async function HomePage() {
               <span className="text-xs leading-relaxed text-muted-navy">
                 Game is full at {cap}. First to respond when a spot opens gets it.
               </span>
+              <AddToCalendar game={game} />
               <form action={cancelRsvpAction}>
                 <input type="hidden" name="gameId" value={game.id} />
                 <TagButton variant="danger" type="submit" className="mt-1">
@@ -216,7 +227,7 @@ export default async function HomePage() {
             ))}
           </div>
 
-          {canSponsorGuest(account.tier) && (
+          {canInvite && (
             <Link
               href="/guests/new"
               className="w-full rounded-full bg-navy py-3 text-center text-xs font-extrabold tracking-wide text-cream"
@@ -226,7 +237,7 @@ export default async function HomePage() {
           )}
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "HOME")} />
+      <BottomNav items={await memberNavItems(account, "HOME")} />
     </>
   );
 }

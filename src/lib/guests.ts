@@ -4,8 +4,41 @@ import { sql } from "@/lib/db";
 import { normalizePhone } from "@/lib/accounts";
 import { insertRsvpRespectingCap, type RsvpStatus } from "@/lib/rsvps";
 import { currentMonthStartUtc } from "@/lib/time";
+import { TIER_ORDER, TIER_LABELS, isRankedTier, type RankedTier } from "@/lib/tiers";
 
-const MONTHLY_GUEST_ALLOWANCE = 2;
+/** Every tier's monthly guest-invite allowance, in TIER_ORDER — 0 means that tier can't sponsor at all. */
+export async function getTierGuestAllowances(): Promise<Record<RankedTier, number>> {
+  const rows = await sql<{ tier: RankedTier; monthly_allowance: number }[]>`
+    select tier, monthly_allowance from tier_guest_settings
+  `;
+  const byTier = Object.fromEntries(rows.map((r) => [r.tier, r.monthly_allowance]));
+  return Object.fromEntries(TIER_ORDER.map((t) => [t, byTier[t] ?? 0])) as Record<RankedTier, number>;
+}
+
+export async function setTierGuestAllowance(tier: RankedTier, monthlyAllowance: number): Promise<void> {
+  await sql`
+    insert into tier_guest_settings (tier, monthly_allowance)
+    values (${tier}, ${monthlyAllowance})
+    on conflict (tier) do update set monthly_allowance = ${monthlyAllowance}
+  `;
+}
+
+export async function canSponsorGuest(tier: string): Promise<boolean> {
+  if (!isRankedTier(tier)) return false;
+  const [row] = await sql<{ monthly_allowance: number }[]>`
+    select monthly_allowance from tier_guest_settings where tier = ${tier}
+  `;
+  return (row?.monthly_allowance ?? 0) > 0;
+}
+
+/** "Only Hall of Fame and Veterans members" — built from whichever tiers currently have an allowance, not a fixed pair. */
+export async function getEligibleGuestSponsorLabel(): Promise<string> {
+  const allowances = await getTierGuestAllowances();
+  const eligible = TIER_ORDER.filter((t) => allowances[t] > 0).map((t) => TIER_LABELS[t]);
+  if (eligible.length === 0) return "No";
+  if (eligible.length === 1) return eligible[0];
+  return `${eligible.slice(0, -1).join(", ")} and ${eligible[eligible.length - 1]}`;
+}
 
 export type GuestRequestStatus = "pending" | "approved" | "denied";
 
@@ -33,14 +66,24 @@ export async function getGuestsBroughtCount(sponsorAccountId: string): Promise<n
   return Number(count);
 }
 
-export async function getMonthlyGuestAllowanceRemaining(sponsorAccountId: string): Promise<number> {
+export async function getMonthlyGuestAllowanceStatus(
+  sponsorAccountId: string
+): Promise<{ remaining: number; allowance: number }> {
+  const [row] = await sql<{ monthly_allowance: number }[]>`
+    select coalesce(tgs.monthly_allowance, 0) as monthly_allowance
+    from accounts a
+    left join tier_guest_settings tgs on tgs.tier = a.tier
+    where a.id = ${sponsorAccountId}
+  `;
+  const allowance = row?.monthly_allowance ?? 0;
+
   const [{ count }] = await sql<{ count: string }[]>`
     select count(*)::text from guest_requests
     where sponsor_account_id = ${sponsorAccountId}
       and status in ('pending', 'approved')
       and requested_at >= ${currentMonthStartUtc().toISOString()}
   `;
-  return Math.max(0, MONTHLY_GUEST_ALLOWANCE - Number(count));
+  return { remaining: Math.max(0, allowance - Number(count)), allowance };
 }
 
 export async function listMyGuestRequests(sponsorAccountId: string): Promise<GuestRequest[]> {
@@ -80,7 +123,7 @@ export async function requestGuestInvite(fields: {
   guestName: string;
   guestPhone: string;
 }): Promise<{ error?: string }> {
-  const remaining = await getMonthlyGuestAllowanceRemaining(fields.sponsorAccountId);
+  const { remaining } = await getMonthlyGuestAllowanceStatus(fields.sponsorAccountId);
   if (remaining <= 0) return { error: "You're out of guest invites for this month." };
 
   await sql`

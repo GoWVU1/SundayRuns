@@ -141,7 +141,7 @@ export default async function ChampionRecapPage({ params }: { params: Promise<{ 
           )}
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "FANTASY")} />
+      <BottomNav items={await memberNavItems(account, "FANTASY")} />
     </>
   );
 }

@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAccount } from "@/lib/auth";
 import { getNextVisibleGame } from "@/lib/games";
-import { getMonthlyGuestAllowanceRemaining, listMyGuestRequests } from "@/lib/guests";
-import { canSponsorGuest } from "@/lib/tiers";
+import { canSponsorGuest, getMonthlyGuestAllowanceStatus, listMyGuestRequests } from "@/lib/guests";
 import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -19,11 +18,11 @@ const STATUS_STYLE: Record<string, string> = {
 
 export default async function NewGuestRequestPage() {
   const account = await requireAccount();
-  if (!canSponsorGuest(account.tier)) redirect("/");
+  if (!(await canSponsorGuest(account.tier))) redirect("/");
 
-  const [next, remaining, myRequests] = await Promise.all([
+  const [next, { remaining, allowance }, myRequests] = await Promise.all([
     getNextVisibleGame(account),
-    getMonthlyGuestAllowanceRemaining(account.id),
+    getMonthlyGuestAllowanceStatus(account.id),
     listMyGuestRequests(account.id),
   ]);
 
@@ -33,8 +32,10 @@ export default async function NewGuestRequestPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-4 p-5">
           <Card tone="dark" className="flex items-center gap-4">
-            <Ring fraction={remaining / 2} size={76} thickness={7}>
-              <span className="font-display text-xl leading-none text-gold">{remaining}/2</span>
+            <Ring fraction={allowance > 0 ? remaining / allowance : 0} size={76} thickness={7}>
+              <span className="font-display text-xl leading-none text-gold">
+                {remaining}/{allowance}
+              </span>
             </Ring>
             <div className="flex flex-col gap-0.5">
               <span className="font-display text-[13px] tracking-wide text-cream">GUEST INVITES LEFT</span>
@@ -81,7 +82,7 @@ export default async function NewGuestRequestPage() {
           </div>
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "GUESTS")} />
+      <BottomNav items={await memberNavItems(account, "GUESTS")} />
     </>
   );
 }

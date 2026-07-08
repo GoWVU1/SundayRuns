@@ -58,7 +58,7 @@ export default async function FantasyPunishmentsPage() {
           })}
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "FANTASY")} />
+      <BottomNav items={await memberNavItems(account, "FANTASY")} />
     </>
   );
 }

@@ -179,7 +179,7 @@ export default async function FantasyHubPage() {
           </div>
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "FANTASY")} />
+      <BottomNav items={await memberNavItems(account, "FANTASY")} />
     </>
   );
 }

@@ -49,7 +49,7 @@ export default async function FantasyHistoryPage() {
           </div>
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "FANTASY")} />
+      <BottomNav items={await memberNavItems(account, "FANTASY")} />
     </>
   );
 }

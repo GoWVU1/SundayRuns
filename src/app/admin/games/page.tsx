@@ -20,6 +20,12 @@ export default async function AdminGamesListPage() {
           >
             + NEW GAME
           </Link>
+          <Link
+            href="/admin/games/templates"
+            className="w-full rounded-full border border-navy/25 py-2.5 text-center text-[11px] font-extrabold tracking-wide text-navy"
+          >
+            EDIT QUICK-CREATE TEMPLATES
+          </Link>
 
           {games.length === 0 && (
             <div className="py-6 text-center text-xs text-muted">No upcoming games yet.</div>

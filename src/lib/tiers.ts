@@ -11,17 +11,15 @@ export const TIER_UNLOCK_OFFSET_MINUTES: Record<RankedTier, number> = {
 export const TIER_ORDER: RankedTier[] = ["core", "regular", "extended"];
 
 // Display names only — "core"/"regular"/"extended" stay as the internal DB/priority-window
-// keys (unlock offsets, guest-sponsor eligibility, etc. are all still keyed on these).
+// keys (unlock offsets, etc. are still keyed on these). Guest-sponsor eligibility is no
+// longer tied to specific tiers — see canSponsorGuest() in src/lib/guests.ts, which is
+// admin-configurable per tier via tier_guest_settings.
 export const TIER_LABELS: Record<Tier, string> = {
   core: "HALL OF FAME",
   regular: "VETERANS",
   extended: "ROOKIES",
   guest: "GUEST",
 };
-
-export function canSponsorGuest(tier: string): boolean {
-  return tier === "core" || tier === "regular";
-}
 
 export function isRankedTier(tier: string): tier is RankedTier {
   return tier === "core" || tier === "regular" || tier === "extended";

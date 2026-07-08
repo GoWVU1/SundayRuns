@@ -38,7 +38,7 @@ export default async function FantasyContractPage() {
           ))}
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "FANTASY")} />
+      <BottomNav items={await memberNavItems(account, "FANTASY")} />
     </>
   );
 }

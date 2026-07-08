@@ -438,3 +438,33 @@ create table if not exists fantasy_dues (
   paid_at timestamptz,
   unique (year, account_id)
 );
+
+-- ============================================================
+-- Stage G — admin-configurable guest allowances + game templates
+-- ============================================================
+-- Monthly guest-invite allowance per tier — 0 means that tier can't sponsor
+-- guests at all. Replaces the old hardcoded canSponsorGuest()/allowance=2.
+create table if not exists tier_guest_settings (
+  tier text primary key check (tier in ('core', 'regular', 'extended')),
+  monthly_allowance int not null default 0
+);
+
+insert into tier_guest_settings (tier, monthly_allowance) values
+  ('core', 2), ('regular', 2), ('extended', 0)
+on conflict (tier) do nothing;
+
+-- Two admin-editable quick-create presets for the "new one-off game" form —
+-- just prefill values, not real games, so no FK/visibility-account wiring.
+create table if not exists game_templates (
+  slot smallint primary key check (slot in (1, 2)),
+  name text not null,
+  location text not null default '',
+  cap integer not null default 16,
+  visibility text not null default 'standard' check (visibility in ('standard', 'restricted')),
+  visible_tiers text[] not null default '{}'
+);
+
+insert into game_templates (slot, name, location, cap, visibility) values
+  (1, 'Weeknight Run', '', 12, 'standard'),
+  (2, 'Weekend Game', '', 17, 'standard')
+on conflict (slot) do nothing;

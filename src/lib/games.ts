@@ -230,3 +230,42 @@ export async function toggleGameOpen(id: string): Promise<Game> {
 export async function deleteGame(id: string): Promise<void> {
   await sql`delete from games where id = ${id}`;
 }
+
+export type GameTemplate = {
+  slot: 1 | 2;
+  name: string;
+  location: string;
+  cap: number;
+  visibility: GameVisibility;
+  visible_tiers: RankedTier[];
+};
+
+/** The two admin-editable quick-create presets for the "new one-off game" form. */
+export async function getGameTemplates(): Promise<GameTemplate[]> {
+  return sql<GameTemplate[]>`
+    select slot, name, location, cap, visibility, visible_tiers from game_templates order by slot asc
+  `;
+}
+
+export async function getGameTemplate(slot: 1 | 2): Promise<GameTemplate | null> {
+  const [row] = await sql<GameTemplate[]>`
+    select slot, name, location, cap, visibility, visible_tiers from game_templates where slot = ${slot}
+  `;
+  return row ?? null;
+}
+
+export async function updateGameTemplate(fields: {
+  slot: 1 | 2;
+  name: string;
+  location: string;
+  cap: number;
+  visibility: GameVisibility;
+  visibleTiers: RankedTier[];
+}): Promise<void> {
+  await sql`
+    update game_templates set
+      name = ${fields.name}, location = ${fields.location}, cap = ${fields.cap},
+      visibility = ${fields.visibility}, visible_tiers = ${sql.array(fields.visibleTiers)}
+    where slot = ${fields.slot}
+  `;
+}

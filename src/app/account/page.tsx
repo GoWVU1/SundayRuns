@@ -163,7 +163,7 @@ export default async function AccountPage() {
           </form>
         </div>
       </main>
-      <BottomNav items={memberNavItems(account, "ACCOUNT")} />
+      <BottomNav items={await memberNavItems(account, "ACCOUNT")} />
     </>
   );
 }
