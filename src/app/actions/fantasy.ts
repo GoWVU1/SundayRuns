@@ -25,29 +25,15 @@ function revalidateFantasy() {
   revalidatePath("/admin/fantasy/loser");
 }
 
-export async function setStandingAction(formData: FormData) {
-  await requireAdmin();
-  const year = Number(formData.get("year"));
-  const place = Number(formData.get("place"));
-  if (place !== 1 && place !== 2 && place !== 3) return;
-  const displayName = String(formData.get("displayName") || "").trim();
-  const payoutUsd = Number(formData.get("payoutUsd"));
-  if (!displayName || !Number.isFinite(payoutUsd)) return;
-
-  await setStanding({ year, place, displayName, payoutUsd });
-  revalidateFantasy();
-}
-
 export async function saveChampionRecapAction(formData: FormData) {
   await requireAdmin();
   const year = Number(formData.get("year"));
   const place = Number(formData.get("place"));
   if (place !== 1 && place !== 2 && place !== 3) return;
-  const displayName = String(formData.get("displayName") || "").trim();
-  const payoutUsd = Number(formData.get("payoutUsd"));
-  if (!displayName || !Number.isFinite(payoutUsd)) return;
+  const accountId = String(formData.get("accountId") || "").trim();
+  if (!accountId) return;
 
-  await setStanding({ year, place, displayName, payoutUsd });
+  await setStanding({ year, place, accountId });
   await updateStandingNarrative({
     year,
     place,

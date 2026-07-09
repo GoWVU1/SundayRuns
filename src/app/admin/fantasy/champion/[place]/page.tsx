@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getStandingByPlace } from "@/lib/fantasy";
+import { getStandingByPlace, listFantasyMembers, PAYOUT_BY_PLACE } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Field } from "@/components/Field";
@@ -21,7 +21,10 @@ export default async function AdminChampionEditPage({
   if (place !== 1 && place !== 2 && place !== 3) notFound();
   const year = Number(yearRaw) || new Date().getUTCFullYear();
 
-  const existing = await getStandingByPlace(year, place as 1 | 2 | 3);
+  const [existing, members] = await Promise.all([
+    getStandingByPlace(year, place as 1 | 2 | 3),
+    listFantasyMembers(),
+  ]);
 
   return (
     <>
@@ -31,16 +34,34 @@ export default async function AdminChampionEditPage({
           <input type="hidden" name="place" value={place} />
           <div className="flex gap-3">
             <Field label="YEAR" name="year" type="number" defaultValue={year} className="w-24" />
-            <Field
-              label="PAYOUT $"
-              name="payoutUsd"
-              type="number"
-              step="0.01"
-              defaultValue={existing?.payoutUsd ?? ""}
-              className="flex-1"
-            />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <span className="text-[10px] font-extrabold tracking-[2px] text-muted">PAYOUT $</span>
+              <div className="flex h-[46px] items-center rounded-[10px] border border-navy/20 bg-cream px-3.5 text-[15px] text-navy">
+                ${PAYOUT_BY_PLACE[place as 1 | 2 | 3].toFixed(2)}
+              </div>
+            </div>
           </div>
-          <Field label="NAME" name="displayName" placeholder="Name" defaultValue={existing?.name ?? ""} />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="accountId" className="text-[10px] font-extrabold tracking-[2px] text-muted">
+              MEMBER
+            </label>
+            <select
+              id="accountId"
+              name="accountId"
+              defaultValue={existing?.accountId ?? ""}
+              required
+              className="w-full rounded-[10px] border border-navy/20 bg-card px-3.5 py-3 text-[15px] text-navy outline-none focus:border-navy/50"
+            >
+              <option value="" disabled>
+                Select a fantasy member
+              </option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="mt-2 flex items-center gap-2.5">
             <span className="font-display text-[15px] tracking-wide text-navy">SEASON RECAP</span>

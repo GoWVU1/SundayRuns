@@ -2,6 +2,13 @@ import "server-only";
 import { cache } from "react";
 import { sql } from "@/lib/db";
 
+/** Fixed payout schedule — Article III, Section 3.1 of the league contract. Not admin-editable per-entry. */
+export const PAYOUT_BY_PLACE: Record<1 | 2 | 3, number> = {
+  1: 140,
+  2: 35,
+  3: 25,
+};
+
 export const PUNISHMENTS = [
   {
     key: "act_exam",
@@ -64,6 +71,7 @@ export type SeasonRecap = {
   year: number;
   place: number;
   name: string;
+  accountId: string | null;
   payoutUsd: string;
   record: string | null;
   finalStanding: string | null;
@@ -80,6 +88,7 @@ export async function getLatestSeasonRecap(accountId: string): Promise<SeasonRec
     {
       place: number;
       name: string;
+      account_id: string | null;
       payout_usd: string;
       record: string | null;
       final_standing: string | null;
@@ -88,7 +97,7 @@ export async function getLatestSeasonRecap(accountId: string): Promise<SeasonRec
       note: string | null;
     }[]
   >`
-    select fs.place, coalesce(a.name, fs.display_name) as name, fs.payout_usd::text,
+    select fs.place, coalesce(a.name, fs.display_name) as name, fs.account_id, fs.payout_usd::text,
       fs.record, fs.final_standing, fs.clinched, fs.mvp, fs.note
     from fantasy_standings fs
     left join accounts a on a.id = fs.account_id
@@ -99,6 +108,7 @@ export async function getLatestSeasonRecap(accountId: string): Promise<SeasonRec
     year,
     place: row.place,
     name: row.name,
+    accountId: row.account_id,
     payoutUsd: row.payout_usd,
     record: row.record,
     finalStanding: row.final_standing,
@@ -130,6 +140,7 @@ export async function getStandingByPlace(year: number, place: 1 | 2 | 3): Promis
   const [row] = await sql<
     {
       name: string | null;
+      account_id: string | null;
       payout_usd: string;
       record: string | null;
       final_standing: string | null;
@@ -138,7 +149,7 @@ export async function getStandingByPlace(year: number, place: 1 | 2 | 3): Promis
       note: string | null;
     }[]
   >`
-    select coalesce(a.name, fs.display_name) as name, fs.payout_usd::text,
+    select coalesce(a.name, fs.display_name) as name, fs.account_id, fs.payout_usd::text,
       fs.record, fs.final_standing, fs.clinched, fs.mvp, fs.note
     from fantasy_standings fs
     left join accounts a on a.id = fs.account_id
@@ -149,6 +160,7 @@ export async function getStandingByPlace(year: number, place: 1 | 2 | 3): Promis
     year,
     place,
     name: row.name,
+    accountId: row.account_id,
     payoutUsd: row.payout_usd,
     record: row.record,
     finalStanding: row.final_standing,
@@ -209,16 +221,20 @@ export async function getLatestStandings(): Promise<{ year: number | null; stand
   return { year, standings };
 }
 
-export async function setStanding(fields: {
-  year: number;
-  place: 1 | 2 | 3;
-  displayName: string;
-  payoutUsd: number;
-}): Promise<void> {
+/** Everyone currently in the fantasy league — the pool the standings picker chooses from. */
+export async function listFantasyMembers(): Promise<{ id: string; name: string }[]> {
+  return sql<{ id: string; name: string }[]>`
+    select id, name from accounts where fantasy_member = true order by name asc
+  `;
+}
+
+/** Payout is always PAYOUT_BY_PLACE, not admin-entered — see Article III, Section 3.1. */
+export async function setStanding(fields: { year: number; place: 1 | 2 | 3; accountId: string }): Promise<void> {
+  const payoutUsd = PAYOUT_BY_PLACE[fields.place];
   await sql`
-    insert into fantasy_standings (year, place, display_name, payout_usd)
-    values (${fields.year}, ${fields.place}, ${fields.displayName}, ${fields.payoutUsd})
-    on conflict (year, place) do update set display_name = ${fields.displayName}, payout_usd = ${fields.payoutUsd}
+    insert into fantasy_standings (year, place, account_id, payout_usd, display_name)
+    values (${fields.year}, ${fields.place}, ${fields.accountId}, ${payoutUsd}, null)
+    on conflict (year, place) do update set account_id = ${fields.accountId}, payout_usd = ${payoutUsd}, display_name = null
   `;
 }
 
