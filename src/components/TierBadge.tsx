@@ -1,4 +1,4 @@
-import { TIER_LABELS, type Tier } from "@/lib/tiers";
+import { getTierLabel } from "@/lib/tiers";
 
 const TIER_CHIP_STYLES: Record<string, string> = {
   core: "border-navy text-cream bg-navy",
@@ -9,7 +9,7 @@ const TIER_CHIP_STYLES: Record<string, string> = {
 
 export function TierBadge({ tier, className = "" }: { tier: string; className?: string }) {
   const style = TIER_CHIP_STYLES[tier] ?? TIER_CHIP_STYLES.extended;
-  const label = TIER_LABELS[tier as Tier] ?? tier.toUpperCase();
+  const label = getTierLabel(tier);
   return (
     <span
       className={`whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[9px] font-extrabold tracking-wide ${style} ${className}`}

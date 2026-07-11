@@ -9,6 +9,7 @@ import {
 import { listAccounts } from "@/lib/accounts";
 import { getRoster } from "@/lib/rsvps";
 import { utcToLocalInput } from "@/lib/time";
+import { getTierLabel } from "@/lib/tiers";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { GameFormFields } from "@/components/GameFormFields";
@@ -80,7 +81,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
                 <option value="">Select a member</option>
                 {accounts.map((account) => (
                   <option key={account.id} value={account.id}>
-                    {account.name} ({account.tier})
+                    {account.name} ({getTierLabel(account.tier)})
                   </option>
                 ))}
               </select>

@@ -17,6 +17,11 @@ export const TIER_LABELS: Record<Tier, string> = {
   guest: "GUEST",
 };
 
+/** Convert stable database tier keys into the names shown throughout the app. */
+export function getTierLabel(tier: string): string {
+  return TIER_LABELS[tier as Tier] ?? tier.toUpperCase();
+}
+
 export function isRankedTier(tier: string): tier is RankedTier {
   return tier === "core" || tier === "regular" || tier === "extended";
 }

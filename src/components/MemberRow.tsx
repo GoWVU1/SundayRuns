@@ -13,7 +13,7 @@ import {
 } from "@/app/actions/admin";
 import { TagButton } from "@/components/Button";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
-import { TIER_ORDER, TIER_LABELS } from "@/lib/tiers";
+import { getTierLabel, TIER_ORDER, TIER_LABELS } from "@/lib/tiers";
 
 export type PublicMember = {
   id: string;
@@ -49,7 +49,7 @@ export function MemberRow({
   );
   const [quickPending, startQuickTransition] = useTransition();
   const isLastAdmin = member.is_admin && adminCount <= 1;
-  const tierStatus = TIER_LABELS[member.tier as keyof typeof TIER_LABELS] ?? member.tier.toUpperCase();
+  const tierStatus = getTierLabel(member.tier);
   const runQuickAction = (action: (fd: FormData) => Promise<void>, fields: Record<string, string>) => {
     startQuickTransition(() => callAction(action, fields));
   };
