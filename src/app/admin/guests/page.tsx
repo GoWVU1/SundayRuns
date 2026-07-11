@@ -2,7 +2,7 @@ import { listPendingGuestRequests, listRecentGuestDecisions } from "@/lib/guests
 import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { PillButton } from "@/components/Button";
+import { ActionSubmitButton, PillSubmitButton } from "@/components/SubmitButton";
 import { approveGuestRequestAction, denyGuestRequestAction } from "@/app/actions/guests";
 
 export default async function AdminGuestsPage() {
@@ -40,18 +40,18 @@ export default async function AdminGuestsPage() {
               <div className="flex gap-2.5">
                 <form action={approveGuestRequestAction} className="flex-1">
                   <input type="hidden" name="requestId" value={r.id} />
-                  <PillButton type="submit" variant="gold">
+                  <PillSubmitButton pendingLabel="APPROVING…" variant="gold">
                     APPROVE
-                  </PillButton>
+                  </PillSubmitButton>
                 </form>
                 <form action={denyGuestRequestAction} className="flex-1">
                   <input type="hidden" name="requestId" value={r.id} />
-                  <button
-                    type="submit"
+                  <ActionSubmitButton
+                    pendingLabel="DENYING…"
                     className="w-full rounded-full border-[1.5px] border-danger py-4 font-display text-lg tracking-wide text-danger"
                   >
                     DENY
-                  </button>
+                  </ActionSubmitButton>
                 </form>
               </div>
             </div>

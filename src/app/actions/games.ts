@@ -5,15 +5,17 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { localInputToUtc } from "@/lib/time";
 import { isRankedTier, type RankedTier } from "@/lib/tiers";
+import { adminEnrollRsvp, type RsvpStatus } from "@/lib/rsvps";
 import {
   createGame,
   deleteGame,
-  setTierUnlockOffset,
+  setTierUnlockSetting,
   toggleGameOpen,
   updateGame,
   updateGameTemplate,
-  windowToUnlockOffset,
   type GameVisibility,
+  type GameTierUnlocks,
+  type TierUnlockSettings,
 } from "@/lib/games";
 
 function revalidateGameScreens() {
@@ -40,6 +42,15 @@ function readGameForm(formData: FormData) {
   const visibility = (String(formData.get("visibility") || "standard") as GameVisibility);
   const rawCap = Number(formData.get("cap"));
   const cap = Number.isFinite(rawCap) ? Math.max(1, Math.min(50, Math.round(rawCap))) : 16;
+  const useCustomUnlocks = visibility === "standard" && formData.get("useCustomUnlocks") === "true";
+  const tierUnlocks = useCustomUnlocks
+    ? Object.fromEntries(
+        (["core", "regular", "extended"] as RankedTier[]).map((tier) => [
+          tier,
+          localInputToUtc(String(formData.get(`unlock-${tier}`) || "")),
+        ])
+      ) as GameTierUnlocks
+    : null;
   return {
     startsAt: localInputToUtc(String(formData.get("startsAt") || "")),
     location: String(formData.get("location") || ""),
@@ -49,6 +60,7 @@ function readGameForm(formData: FormData) {
     visibility,
     visibleTiers: formData.getAll("visibleTiers").map(String).filter(isRankedTier) as RankedTier[],
     visibleAccountIds: formData.getAll("visibleAccountIds").map(String),
+    tierUnlocks,
   };
 }
 
@@ -69,16 +81,28 @@ export async function updateGameAction(formData: FormData) {
   redirect("/admin/games");
 }
 
-export async function setTierUnlockOffsetAction(formData: FormData) {
+export async function adminEnrollRsvpAction(formData: FormData) {
+  await requireAdmin();
+  const gameId = String(formData.get("gameId") || "");
+  const accountId = String(formData.get("accountId") || "");
+  const rawStatus = String(formData.get("status") || "confirmed");
+  if (!gameId || !accountId || (rawStatus !== "confirmed" && rawStatus !== "waitlisted")) return;
+  await adminEnrollRsvp(gameId, accountId, rawStatus as RsvpStatus);
+  revalidatePath(`/admin/games/${gameId}`);
+  revalidatePath(`/admin/attendance/${gameId}`);
+  revalidateGameScreens();
+}
+
+export async function setTierUnlockSettingAction(formData: FormData) {
   await requireAdmin();
   const tier = String(formData.get("tier") || "");
   if (!isRankedTier(tier)) return;
 
-  const daysBefore = Number(formData.get("daysBefore")) || 0;
-  const [hh, mm] = String(formData.get("time") || "18:00").split(":").map(Number);
-  const timeMinutes = (hh || 0) * 60 + (mm || 0);
+  const daysBefore = Math.max(0, Math.min(14, Math.round(Number(formData.get("daysBefore")) || 0)));
+  const time = String(formData.get("time") || "18:00");
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return;
 
-  await setTierUnlockOffset(tier, windowToUnlockOffset(daysBefore, timeMinutes));
+  await setTierUnlockSetting(tier, daysBefore, time);
   revalidatePath("/admin/games/windows");
   revalidatePath("/");
 }
@@ -90,6 +114,21 @@ export async function updateGameTemplateAction(formData: FormData) {
 
   const rawCap = Number(formData.get("cap"));
   const cap = Number.isFinite(rawCap) ? Math.max(1, Math.min(50, Math.round(rawCap))) : 16;
+  const visibility = (String(formData.get("visibility") || "standard") as GameVisibility);
+  const useCustomUnlocks = visibility === "standard" && formData.get("useCustomUnlocks") === "true";
+  const tierUnlocks = useCustomUnlocks
+    ? Object.fromEntries(
+        (["core", "regular", "extended"] as RankedTier[]).map((tier) => {
+          const daysBefore = Math.max(
+            0,
+            Math.min(14, Math.round(Number(formData.get(`daysBefore-${tier}`)) || 0))
+          );
+          const time = String(formData.get(`time-${tier}`) || "18:00");
+          if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error(`Invalid ${tier} unlock time`);
+          return [tier, { daysBefore, time }];
+        })
+      ) as TierUnlockSettings
+    : null;
 
   await updateGameTemplate({
     slot: slotRaw,
@@ -97,8 +136,9 @@ export async function updateGameTemplateAction(formData: FormData) {
     location: String(formData.get("location") || ""),
     address: String(formData.get("address") || ""),
     cap,
-    visibility: (String(formData.get("visibility") || "standard") as GameVisibility),
+    visibility,
     visibleTiers: formData.getAll("visibleTiers").map(String).filter(isRankedTier) as RankedTier[],
+    tierUnlocks,
   });
   revalidatePath("/admin/games");
   revalidatePath("/admin/games/new");

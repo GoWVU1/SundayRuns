@@ -49,6 +49,42 @@ export async function getGamesPlayedCount(accountId: string): Promise<number> {
   return Number(count);
 }
 
+export type AccountAttendanceSummary = {
+  currentStreak: number;
+  gamesPlayed: number;
+  noShows: number;
+  recentWeeks: boolean[];
+};
+
+/** Account-page attendance metrics from one ordered history query instead of four. */
+export async function getAccountAttendanceSummary(
+  accountId: string,
+  recentLimit = 8
+): Promise<AccountAttendanceSummary> {
+  const rows = await sql<{ status: AttendanceStatus; visibility: string }[]>`
+    select att.status, g.visibility
+    from attendance att
+    join games g on g.id = att.game_id
+    where att.account_id = ${accountId}
+    order by g.starts_at desc
+  `;
+  const standardRows = rows.filter((row) => row.visibility === "standard");
+  let currentStreak = 0;
+  for (const row of standardRows) {
+    if (row.status !== "present") break;
+    currentStreak += 1;
+  }
+  return {
+    currentStreak,
+    gamesPlayed: rows.filter((row) => row.status === "present").length,
+    noShows: rows.filter((row) => row.status === "no_show").length,
+    recentWeeks: standardRows
+      .slice(0, recentLimit)
+      .map((row) => row.status === "present")
+      .reverse(),
+  };
+}
+
 /** Most recent N standard games' present/absent status for this account, oldest first (for a left-to-right strip). */
 export async function getRecentAttendanceWeeks(accountId: string, limit = 8): Promise<boolean[]> {
   const rows = await sql<{ status: AttendanceStatus }[]>`
@@ -110,4 +146,73 @@ export async function getGamesNeedingAttendance(): Promise<
     group by g.id, g.starts_at, g.location
     order by g.starts_at desc
   `;
+}
+
+export type AdminAttendanceStat = {
+  accountId: string;
+  name: string;
+  tier: string;
+  gamesPlayed: number;
+  missedCount: number;
+  currentStreak: number;
+  missedGames: { gameId: string; startsAt: string; location: string }[];
+};
+
+/** One commissioner-facing attendance snapshot, including the actual missed games. */
+export async function getAdminAttendanceStats(): Promise<AdminAttendanceStat[]> {
+  const rows = await sql<{
+    account_id: string;
+    name: string;
+    tier: string;
+    status: AttendanceStatus | null;
+    game_id: string | null;
+    starts_at: string | null;
+    location: string | null;
+    visibility: string | null;
+  }[]>`
+    select
+      a.id as account_id,
+      a.name,
+      a.tier,
+      att.status,
+      g.id as game_id,
+      g.starts_at,
+      g.location,
+      g.visibility
+    from accounts a
+    left join attendance att on att.account_id = a.id
+    left join games g on g.id = att.game_id
+    where a.tier != 'guest'
+    order by a.name asc, g.starts_at desc nulls last
+  `;
+  const stats = new Map<string, AdminAttendanceStat & { streakOpen: boolean }>();
+  for (const row of rows) {
+    const current = stats.get(row.account_id) ?? {
+      accountId: row.account_id,
+      name: row.name,
+      tier: row.tier,
+      gamesPlayed: 0,
+      missedCount: 0,
+      currentStreak: 0,
+      missedGames: [],
+      streakOpen: true,
+    };
+    if (row.status === "present") current.gamesPlayed += 1;
+    if (row.status === "no_show") {
+      current.missedCount += 1;
+      if (row.game_id && row.starts_at) {
+        current.missedGames.push({
+          gameId: row.game_id,
+          startsAt: row.starts_at,
+          location: row.location ?? "",
+        });
+      }
+    }
+    if (row.visibility === "standard" && current.streakOpen && row.status) {
+      if (row.status === "present") current.currentStreak += 1;
+      else current.streakOpen = false;
+    }
+    stats.set(row.account_id, current);
+  }
+  return [...stats.values()].map(({ streakOpen: _streakOpen, ...stat }) => stat);
 }

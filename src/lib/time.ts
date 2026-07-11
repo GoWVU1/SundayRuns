@@ -21,6 +21,26 @@ export function utcToLocalInput(date: Date | string): string {
     .toFormat("yyyy-MM-dd'T'HH:mm");
 }
 
+/**
+ * Resolves a fixed local signup clock time against a game's local calendar
+ * date. Only the date is borrowed from kickoff; changing kickoff from 6 PM to
+ * 8 PM therefore leaves a 10:30 AM unlock at 10:30 AM.
+ */
+export function fixedLocalUnlockUtc(
+  gameStartsAt: Date | string,
+  daysBefore: number,
+  localTime: string
+): Date {
+  const match = /^(\d{1,2}):(\d{2})/.exec(localTime);
+  if (!match) throw new Error(`Invalid local unlock time: ${localTime}`);
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const gameDay = DateTime.fromJSDate(new Date(gameStartsAt)).setZone(APP_TIMEZONE).startOf("day");
+  const unlock = gameDay.minus({ days: daysBefore }).set({ hour, minute });
+  if (!unlock.isValid) throw new Error(`Invalid local unlock time: ${localTime}`);
+  return unlock.toJSDate();
+}
+
 /** "SAT, JUL 12" — matches the app's Bebas Neue all-caps headline copy. */
 export function formatGameDateLabel(date: Date | string): string {
   return DateTime.fromJSDate(new Date(date)).setZone(APP_TIMEZONE).toFormat("ccc, LLL d").toUpperCase();

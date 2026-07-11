@@ -57,10 +57,12 @@ async function getLatestStandingsYear(): Promise<number | null> {
  * Wrapped in cache() since Header and pages that render it both fetch this independently.
  */
 export const getLatestChampionAccountId = cache(async (): Promise<string | null> => {
-  const year = await getLatestStandingsYear();
-  if (!year) return null;
   const [row] = await sql<{ account_id: string | null }[]>`
-    select account_id from fantasy_standings where year = ${year} and place = 1
+    select account_id
+    from fantasy_standings
+    where place = 1
+    order by year desc
+    limit 1
   `;
   return row?.account_id ?? null;
 });

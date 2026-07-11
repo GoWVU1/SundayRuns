@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { listAccounts } from "@/lib/accounts";
-import { getGameTemplates } from "@/lib/games";
+import { getGameTemplates, getTierUnlockSettings, resolveTierUnlockInputs } from "@/lib/games";
 import { nextSunday6pmUtc, utcToLocalInput } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { GameFormFields } from "@/components/GameFormFields";
-import { PillButton } from "@/components/Button";
+import { PillSubmitButton } from "@/components/SubmitButton";
 import { createGameAction } from "@/app/actions/games";
 
 export default async function NewGamePage({
@@ -14,11 +14,20 @@ export default async function NewGamePage({
   searchParams: Promise<{ template?: string }>;
 }) {
   const { template: templateParam } = await searchParams;
-  const [accounts, templates] = await Promise.all([listAccounts(), getGameTemplates()]);
+  const [accounts, templates, globalUnlocks] = await Promise.all([
+    listAccounts(),
+    getGameTemplates(),
+    getTierUnlockSettings(),
+  ]);
   const members = accounts.map((a) => ({ id: a.id, name: a.name, tier: a.tier }));
 
   const templateSlot = Number(templateParam);
   const chosen = templates.find((t) => t.slot === templateSlot) ?? null;
+  const defaultStartsAt = nextSunday6pmUtc();
+  const tierUnlockInputs = resolveTierUnlockInputs(
+    defaultStartsAt,
+    chosen?.tier_unlocks ?? globalUnlocks
+  );
 
   return (
     <>
@@ -47,7 +56,7 @@ export default async function NewGamePage({
           <form action={createGameAction} className="flex flex-col gap-3.5">
             <GameFormFields
               key={chosen?.slot ?? "blank"}
-              defaultStartsAt={utcToLocalInput(nextSunday6pmUtc())}
+              defaultStartsAt={utcToLocalInput(defaultStartsAt)}
               defaultLocation={chosen?.location ?? ""}
               defaultAddress={chosen?.address ?? ""}
               defaultCap={chosen?.cap ?? 16}
@@ -55,11 +64,13 @@ export default async function NewGamePage({
               defaultVisibility={chosen?.visibility ?? "standard"}
               defaultVisibleTiers={chosen?.visible_tiers ?? []}
               defaultVisibleAccountIds={[]}
+              defaultUseCustomUnlocks={chosen?.tier_unlocks !== null && chosen?.tier_unlocks !== undefined}
+              defaultTierUnlockInputs={tierUnlockInputs}
               members={members}
             />
-            <PillButton type="submit" className="mt-1.5">
+            <PillSubmitButton pendingLabel="CREATING…" className="mt-1.5">
               CREATE GAME
-            </PillButton>
+            </PillSubmitButton>
           </form>
         </div>
       </main>

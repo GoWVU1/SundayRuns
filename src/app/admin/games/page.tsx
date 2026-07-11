@@ -4,6 +4,7 @@ import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { ActionSubmitButton } from "@/components/SubmitButton";
 import { deleteGameAction, toggleGameOpenAction } from "@/app/actions/games";
 
 export default async function AdminGamesListPage() {
@@ -56,14 +57,14 @@ export default async function AdminGamesListPage() {
               <div className="mt-1.5 flex items-center gap-2">
                 <form action={toggleGameOpenAction} className="flex-1">
                   <input type="hidden" name="gameId" value={g.id} />
-                  <button
-                    type="submit"
+                  <ActionSubmitButton
+                    pendingLabel="SAVING…"
                     className={`w-full rounded-full py-2 text-[11px] font-extrabold tracking-wide ${
                       g.is_open ? "bg-gold text-navy" : "border border-navy/25 text-navy"
                     }`}
                   >
                     {g.is_open ? "OPEN" : "CLOSED"}
-                  </button>
+                  </ActionSubmitButton>
                 </form>
                 <Link
                   href={`/admin/games/${g.id}`}

@@ -1,9 +1,8 @@
 export type RankedTier = "core" | "regular" | "extended";
 export type Tier = RankedTier | "guest";
 
-// Per-tier signup-window unlock offsets are admin-configurable — see
-// getTierUnlockOffsets()/setTierUnlockOffset() in src/lib/games.ts, backed by
-// the tier_unlock_settings table.
+// Per-tier signup clock times are admin-configurable in tier_unlock_settings.
+// Individual standard games can override them in game_tier_unlocks.
 
 export const TIER_ORDER: RankedTier[] = ["core", "regular", "extended"];
 

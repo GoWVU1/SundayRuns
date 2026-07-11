@@ -11,6 +11,8 @@ export function GameFormFields({
   defaultVisibility,
   defaultVisibleTiers,
   defaultVisibleAccountIds,
+  defaultUseCustomUnlocks,
+  defaultTierUnlockInputs,
   members,
 }: {
   defaultStartsAt: string;
@@ -21,6 +23,8 @@ export function GameFormFields({
   defaultVisibility: "standard" | "restricted";
   defaultVisibleTiers: RankedTier[];
   defaultVisibleAccountIds: string[];
+  defaultUseCustomUnlocks: boolean;
+  defaultTierUnlockInputs: Record<RankedTier, string>;
   members: SelectableAccount[];
 }) {
   return (
@@ -64,6 +68,7 @@ export function GameFormFields({
               type="radio"
               name="visibility"
               value="standard"
+              id="visibility-standard"
               defaultChecked={defaultVisibility !== "restricted"}
               className="sr-only"
             />
@@ -82,6 +87,39 @@ export function GameFormFields({
             <span className="text-xs font-extrabold tracking-wide">RESTRICTED</span>
             <span className="mt-0.5 block text-[10px] font-normal opacity-70">Only who you pick below</span>
           </label>
+        </div>
+
+        <div className="hidden flex-col gap-3 rounded-[14px] border border-navy/15 bg-card p-3 group-has-[#visibility-standard:checked]:flex">
+          <label className="flex cursor-pointer items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-extrabold tracking-wide text-navy">CUSTOM TIMES FOR THIS GAME</span>
+              <span className="text-[10px] font-normal text-muted">
+                Otherwise this game uses the fixed signup-window defaults
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              name="useCustomUnlocks"
+              value="true"
+              defaultChecked={defaultUseCustomUnlocks}
+              className="h-5 w-5 flex-shrink-0 accent-navy"
+            />
+          </label>
+          <div className="grid gap-2.5">
+            {TIER_ORDER.map((tier) => (
+              <Field
+                key={tier}
+                label={`${TIER_LABELS[tier]} OPENS`}
+                name={`unlock-${tier}`}
+                type="datetime-local"
+                defaultValue={defaultTierUnlockInputs[tier]}
+                required
+              />
+            ))}
+          </div>
+          <span className="text-[10px] text-muted">
+            These are exact Eastern date/times for this game and do not move with kickoff.
+          </span>
         </div>
 
         <div className="hidden flex-col gap-3 group-has-[#visibility-restricted:checked]:flex">

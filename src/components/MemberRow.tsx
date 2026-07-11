@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import {
   deleteAccountAction,
   resetPasswordAction,
@@ -47,10 +47,18 @@ export function MemberRow({
     setNicknameAction,
     initialNicknameState
   );
+  const [quickPending, startQuickTransition] = useTransition();
   const isLastAdmin = member.is_admin && adminCount <= 1;
+  const tierStatus = TIER_LABELS[member.tier as keyof typeof TIER_LABELS] ?? member.tier.toUpperCase();
+  const runQuickAction = (action: (fd: FormData) => Promise<void>, fields: Record<string, string>) => {
+    startQuickTransition(() => callAction(action, fields));
+  };
 
   return (
-    <details className="border-b border-navy/10 last:border-b-0 [&_summary::-webkit-details-marker]:hidden">
+    <details
+      aria-busy={quickPending}
+      className="border-b border-navy/10 last:border-b-0 [&_summary::-webkit-details-marker]:hidden"
+    >
       <summary className="flex cursor-pointer list-none items-center gap-3 px-3.5 py-3">
         <div className="flex flex-1 flex-col gap-0.5">
           <span className="text-sm font-bold text-navy">{member.name}</span>
@@ -59,16 +67,18 @@ export function MemberRow({
         <TagButton
           type="button"
           variant={member.is_admin ? "gold" : "neutral"}
-          disabled={isSelf && member.is_admin}
-          onClick={async (e) => {
+          disabled={(isSelf && member.is_admin) || quickPending}
+          onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            await callAction(setAdminAction, { accountId: member.id, makeAdmin: (!member.is_admin).toString() });
+            runQuickAction(setAdminAction, { accountId: member.id, makeAdmin: (!member.is_admin).toString() });
           }}
         >
           {member.is_admin ? "ADMIN" : "MEMBER"}
         </TagButton>
-        <span className="text-xs font-extrabold tracking-wide text-muted">RESET ▾</span>
+        <span className="text-right text-[10px] font-extrabold tracking-wide text-muted">
+          {tierStatus} ▾
+        </span>
       </summary>
 
       <div className="flex flex-col gap-3 px-3.5 pb-3.5">
@@ -79,10 +89,11 @@ export function MemberRow({
               <button
                 key={tier}
                 type="button"
-                onClick={() => callAction(setTierAction, { accountId: member.id, tier })}
+                disabled={quickPending}
+                onClick={() => runQuickAction(setTierAction, { accountId: member.id, tier })}
                 className={`flex-1 rounded-full border-[1.5px] py-1.5 text-[10px] font-extrabold tracking-wide ${
                   member.tier === tier ? "border-navy bg-navy text-cream" : "border-navy/25 text-navy"
-                }`}
+                } disabled:cursor-wait disabled:opacity-55`}
               >
                 {TIER_LABELS[tier]}
               </button>
@@ -95,8 +106,9 @@ export function MemberRow({
           <input
             type="checkbox"
             defaultChecked={member.fantasy_member}
+            disabled={quickPending}
             onChange={(e) =>
-              callAction(setFantasyMemberAction, {
+              runQuickAction(setFantasyMemberAction, {
                 accountId: member.id,
                 fantasyMember: e.target.checked.toString(),
               })
@@ -104,6 +116,10 @@ export function MemberRow({
             className="h-4 w-4 accent-navy"
           />
         </label>
+
+        {quickPending && (
+          <span className="text-center text-[10px] font-extrabold tracking-wide text-muted">UPDATING…</span>
+        )}
 
         <form action={nicknameFormAction} className="flex flex-col gap-2">
           <span className="text-[10px] font-extrabold tracking-[2px] text-muted">NICKNAME</span>

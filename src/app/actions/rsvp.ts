@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireAccount } from "@/lib/auth";
 import { assertGameVisible } from "@/lib/games";
 import { claimSpot, cancelRsvp } from "@/lib/rsvps";
@@ -25,11 +26,13 @@ export async function cancelRsvpAction(formData: FormData) {
   const { promotedAccountId } = await cancelRsvp(gameId, account.id);
   revalidatePath("/");
 
-  // Sent after the transaction commits — awaited (not fire-and-forget) since
-  // Vercel serverless functions aren't guaranteed to keep running post-response.
+  // The roster response should not wait on an external push service. Next's
+  // after() keeps the Vercel invocation alive while sending post-response.
   if (promotedAccountId) {
-    await sendWaitlistPromotionPush(promotedAccountId, game).catch((err) =>
-      console.error("Waitlist promotion push failed:", err)
-    );
+    after(async () => {
+      await sendWaitlistPromotionPush(promotedAccountId, game).catch((err) =>
+        console.error("Waitlist promotion push failed:", err)
+      );
+    });
   }
 }

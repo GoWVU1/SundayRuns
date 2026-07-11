@@ -40,7 +40,7 @@ export function MembersList({
         ))}
       </div>
       <span className="text-center text-[11px] text-muted">
-        Tap RESET to set a new password, or ADMIN to grant/revoke access
+        Tap a member to change their tier, nickname, password, or account settings
       </span>
     </>
   );

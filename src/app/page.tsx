@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { requireAccount } from "@/lib/auth";
 import { getNextVisibleGame } from "@/lib/games";
-import { getRoster } from "@/lib/rsvps";
+import { getRosterWithStreaks } from "@/lib/rsvps";
 import { formatGameDateTime, formatUnlockLabel } from "@/lib/time";
 import { TIER_LABELS, isRankedTier } from "@/lib/tiers";
 import { canSponsorGuest } from "@/lib/guests";
-import { getAttendanceStreaks } from "@/lib/attendance";
 import { getLatestChampionAccountId } from "@/lib/fantasy";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -23,24 +22,22 @@ import { memberNavItems } from "@/lib/nav";
 export default async function HomePage() {
   const account = await requireAccount();
 
-  const [next, alreadySubscribed] = await Promise.all([
+  const [next, alreadySubscribed, championAccountId, canInvite] = await Promise.all([
     getNextVisibleGame(account),
     hasActiveSubscription(account.id),
+    getLatestChampionAccountId(),
+    canSponsorGuest(account.tier),
   ]);
   const game = next?.game ?? null;
   const isClaimable = next?.isClaimable ?? false;
   const windowOpensAt = next?.windowOpensAt ?? null;
 
-  const roster = game ? await getRoster(game.id) : [];
+  const { roster, streaks } = game
+    ? await getRosterWithStreaks(game.id)
+    : { roster: [], streaks: new Map<string, number>() };
   const confirmed = roster.filter((r) => r.status === "confirmed");
   const waitlisted = roster.filter((r) => r.status === "waitlisted");
   const mine = roster.find((r) => r.account_id === account.id) ?? null;
-
-  const [streaks, championAccountId, canInvite] = await Promise.all([
-    getAttendanceStreaks(confirmed.map((r) => r.account_id)),
-    getLatestChampionAccountId(),
-    canSponsorGuest(account.tier),
-  ]);
 
   const cap = game?.cap ?? 16;
   const spotsLeft = Math.max(0, cap - confirmed.length);

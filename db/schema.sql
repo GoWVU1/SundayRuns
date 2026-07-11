@@ -480,15 +480,58 @@ alter table game_templates add column if not exists address text not null defaul
 -- ============================================================
 -- Stage I — admin-configurable tier signup windows
 -- ============================================================
--- Minutes before kickoff each tier's signup window opens. Replaces the old
--- hardcoded TIER_UNLOCK_OFFSET_MINUTES constant. Defaults reproduce the
--- original schedule for a normal 6:00 PM kickoff: core = day before 5:00 PM
--- (25h), regular = day of 10:30 AM (7.5h), extended = day of 1:00 PM (5h).
+-- offset_minutes is retained only so databases from the previous release can
+-- be backfilled. Runtime code uses days_before + unlock_time: these are fixed
+-- Eastern wall-clock times and never shift when a game's kickoff time changes.
 create table if not exists tier_unlock_settings (
   tier text primary key check (tier in ('core', 'regular', 'extended')),
   offset_minutes int not null
 );
 
-insert into tier_unlock_settings (tier, offset_minutes) values
-  ('core', 1500), ('regular', 450), ('extended', 300)
+alter table tier_unlock_settings add column if not exists days_before smallint;
+alter table tier_unlock_settings add column if not exists unlock_time time;
+
+insert into tier_unlock_settings (tier, offset_minutes, days_before, unlock_time) values
+  ('core', 1500, 1, '17:00'),
+  ('regular', 450, 0, '10:30'),
+  ('extended', 300, 0, '13:00')
 on conflict (tier) do nothing;
+
+-- Convert the legacy offset against the old 6:00 PM reference exactly once.
+update tier_unlock_settings
+set days_before = greatest(0, ceil((offset_minutes - 1080) / 1440.0)::int),
+    unlock_time = make_time(
+      (((1080 - offset_minutes) % 1440 + 1440) % 1440) / 60,
+      (((1080 - offset_minutes) % 1440 + 1440) % 1440) % 60,
+      0
+    )
+where days_before is null or unlock_time is null;
+
+alter table tier_unlock_settings alter column days_before set not null;
+alter table tier_unlock_settings alter column unlock_time set not null;
+alter table tier_unlock_settings drop constraint if exists tier_unlock_settings_days_before_check;
+alter table tier_unlock_settings add constraint tier_unlock_settings_days_before_check
+  check (days_before between 0 and 14);
+alter table tier_unlock_settings enable row level security;
+
+-- Optional exact overrides for one game. Absence means that tier uses the
+-- fixed global day/time above.
+create table if not exists game_tier_unlocks (
+  game_id uuid not null references games(id) on delete cascade,
+  tier text not null check (tier in ('core', 'regular', 'extended')),
+  opens_at timestamptz not null,
+  primary key (game_id, tier)
+);
+alter table game_tier_unlocks enable row level security;
+
+-- Templates cannot store a calendar date, so their custom schedule is kept as
+-- a day/time recipe. The new-game form resolves it to exact game-local
+-- timestamps, which the admin can still edit before saving.
+create table if not exists game_template_tier_unlocks (
+  template_slot smallint not null references game_templates(slot) on delete cascade,
+  tier text not null check (tier in ('core', 'regular', 'extended')),
+  days_before smallint not null check (days_before between 0 and 14),
+  unlock_time time not null,
+  primary key (template_slot, tier)
+);
+alter table game_template_tier_unlocks enable row level security;

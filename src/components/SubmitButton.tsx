@@ -41,3 +41,25 @@ export function TagSubmitButton({
     </TagButton>
   );
 }
+
+/** Pending-aware native button for icon buttons and bespoke admin controls. */
+export function ActionSubmitButton({
+  pendingLabel,
+  children,
+  className = "",
+  disabled,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { pendingLabel?: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={disabled || pending}
+      aria-busy={pending}
+      className={`${pending ? "cursor-wait opacity-55" : ""} ${className}`}
+      {...props}
+    >
+      {pending && pendingLabel ? pendingLabel : children}
+    </button>
+  );
+}

@@ -5,6 +5,7 @@ import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { TierBadge } from "@/components/TierBadge";
+import { ActionSubmitButton } from "@/components/SubmitButton";
 import { markAttendanceAction } from "@/app/actions/attendance";
 
 export default async function AdminAttendancePage({ params }: { params: Promise<{ gameId: string }> }) {
@@ -38,8 +39,7 @@ export default async function AdminAttendancePage({ params }: { params: Promise<
                     <input type="hidden" name="gameId" value={gameId} />
                     <input type="hidden" name="accountId" value={p.account_id} />
                     <input type="hidden" name="status" value="present" />
-                    <button
-                      type="submit"
+                    <ActionSubmitButton
                       aria-label="Mark present"
                       className={`flex h-[34px] w-[34px] items-center justify-center rounded-full border-[1.5px] border-success ${
                         p.status === "present" ? "bg-success" : "bg-transparent"
@@ -49,14 +49,13 @@ export default async function AdminAttendancePage({ params }: { params: Promise<
                         className="h-[7px] w-3 -translate-y-px rotate-[-45deg] border-b-2 border-l-2"
                         style={{ borderColor: p.status === "present" ? "#f4efe2" : "#15803d" }}
                       />
-                    </button>
+                    </ActionSubmitButton>
                   </form>
                   <form action={markAttendanceAction}>
                     <input type="hidden" name="gameId" value={gameId} />
                     <input type="hidden" name="accountId" value={p.account_id} />
                     <input type="hidden" name="status" value="no_show" />
-                    <button
-                      type="submit"
+                    <ActionSubmitButton
                       aria-label="Mark no-show"
                       className={`relative flex h-[34px] w-[34px] items-center justify-center rounded-full border-[1.5px] border-danger ${
                         p.status === "no_show" ? "bg-danger" : "bg-transparent"
@@ -72,7 +71,7 @@ export default async function AdminAttendancePage({ params }: { params: Promise<
                           style={{ background: p.status === "no_show" ? "#f4efe2" : "#b3261e" }}
                         />
                       </div>
-                    </button>
+                    </ActionSubmitButton>
                   </form>
                 </div>
               </div>

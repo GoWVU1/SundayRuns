@@ -13,5 +13,8 @@ export async function markAttendanceAction(formData: FormData) {
 
   await markAttendance(gameId, accountId, status, admin.id);
   revalidatePath(`/admin/attendance/${gameId}`);
+  revalidatePath("/admin/attendance");
   revalidatePath("/admin");
+  revalidatePath("/account");
+  revalidatePath("/");
 }

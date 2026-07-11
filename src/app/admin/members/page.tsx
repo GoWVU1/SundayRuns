@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { MembersList } from "@/components/MembersList";
 import { setTierGuestAllowanceAction } from "@/app/actions/guests";
+import { ActionSubmitButton } from "@/components/SubmitButton";
 
 export default async function AdminMembersPage() {
   const [account, accounts, allowances] = await Promise.all([
@@ -51,12 +52,12 @@ export default async function AdminMembersPage() {
                   defaultValue={allowances[tier]}
                   className="w-14 rounded-md border border-navy/20 bg-cream px-2 py-1 text-center text-sm text-navy outline-none focus:border-navy/50"
                 />
-                <button
-                  type="submit"
+                <ActionSubmitButton
+                  pendingLabel="SAVING…"
                   className="rounded-full bg-navy px-3 py-1.5 text-[10px] font-extrabold tracking-wide text-cream"
                 >
                   SAVE
-                </button>
+                </ActionSubmitButton>
               </form>
             ))}
           </div>

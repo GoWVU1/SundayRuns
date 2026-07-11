@@ -71,21 +71,22 @@ export async function getGuestsBroughtCount(sponsorAccountId: string): Promise<n
 export async function getMonthlyGuestAllowanceStatus(
   sponsorAccountId: string
 ): Promise<{ remaining: number; allowance: number }> {
-  const [row] = await sql<{ monthly_allowance: number }[]>`
-    select coalesce(tgs.monthly_allowance, 0) as monthly_allowance
+  const [row] = await sql<{ monthly_allowance: number; used: number }[]>`
+    select
+      coalesce(tgs.monthly_allowance, 0) as monthly_allowance,
+      (
+        select count(*)::int
+        from guest_requests gr
+        where gr.sponsor_account_id = a.id
+          and gr.status in ('pending', 'approved')
+          and gr.requested_at >= ${currentMonthStartUtc().toISOString()}
+      ) as used
     from accounts a
     left join tier_guest_settings tgs on tgs.tier = a.tier
     where a.id = ${sponsorAccountId}
   `;
   const allowance = row?.monthly_allowance ?? 0;
-
-  const [{ count }] = await sql<{ count: string }[]>`
-    select count(*)::text from guest_requests
-    where sponsor_account_id = ${sponsorAccountId}
-      and status in ('pending', 'approved')
-      and requested_at >= ${currentMonthStartUtc().toISOString()}
-  `;
-  return { remaining: Math.max(0, allowance - Number(count)), allowance };
+  return { remaining: Math.max(0, allowance - (row?.used ?? 0)), allowance };
 }
 
 export async function listMyGuestRequests(sponsorAccountId: string): Promise<GuestRequest[]> {

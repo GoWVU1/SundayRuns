@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAccount } from "@/lib/auth";
 import { getInitials } from "@/lib/accounts";
-import { getGamesPlayedCount, getNoShowCount, getRecentAttendanceWeeks, getAttendanceStreaks } from "@/lib/attendance";
+import { getAccountAttendanceSummary } from "@/lib/attendance";
 import { getGuestsBroughtCount } from "@/lib/guests";
 import { getLatestChampionAccountId } from "@/lib/fantasy";
 import { hasActiveSubscription } from "@/lib/push";
@@ -9,7 +9,7 @@ import { TIER_LABELS, isRankedTier } from "@/lib/tiers";
 import { formatMonthYear } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { TagButton } from "@/components/Button";
+import { TagSubmitButton } from "@/components/SubmitButton";
 import { PushOptIn } from "@/components/PushOptIn";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { DeleteAccountForm } from "@/components/DeleteAccountForm";
@@ -19,18 +19,15 @@ import { logoutAction } from "@/app/actions/auth";
 export default async function AccountPage() {
   const account = await requireAccount();
 
-  const [streaks, gamesPlayed, guestsBrought, noShows, recentWeeks, championAccountId, pushSubscribed] =
+  const [attendance, guestsBrought, championAccountId, pushSubscribed] =
     await Promise.all([
-      getAttendanceStreaks([account.id]),
-      getGamesPlayedCount(account.id),
+      getAccountAttendanceSummary(account.id, 8),
       getGuestsBroughtCount(account.id),
-      getNoShowCount(account.id),
-      getRecentAttendanceWeeks(account.id, 8),
       getLatestChampionAccountId(),
       hasActiveSubscription(account.id),
     ]);
 
-  const streakCount = streaks.get(account.id) ?? 0;
+  const { currentStreak: streakCount, gamesPlayed, noShows, recentWeeks } = attendance;
   const isChampion = account.id === championAccountId;
   const rankedTier = isRankedTier(account.tier) ? account.tier : "extended";
   const tierLabel = TIER_LABELS[rankedTier];
@@ -158,9 +155,9 @@ export default async function AccountPage() {
           <ChangePasswordForm />
 
           <form action={logoutAction} className="mt-1 flex justify-center">
-            <TagButton type="submit" variant="danger" className="w-full py-3">
+            <TagSubmitButton pendingLabel="SIGNING OUT…" variant="danger" className="w-full py-3">
               SIGN OUT
-            </TagButton>
+            </TagSubmitButton>
           </form>
 
           <DeleteAccountForm />

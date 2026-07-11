@@ -3,41 +3,54 @@ import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
 import { TIER_ORDER, isRankedTier, type RankedTier } from "@/lib/tiers";
 import type { Account } from "@/lib/accounts";
+import { fixedLocalUnlockUtc, utcToLocalInput } from "@/lib/time";
 
-/** 6:00 PM — the "normal Sunday game" every tier's signup window is calibrated against. */
-const REFERENCE_KICKOFF_MINUTE = 18 * 60;
+export type TierUnlockSetting = { daysBefore: number; time: string };
+export type TierUnlockSettings = Record<RankedTier, TierUnlockSetting>;
+export type GameTierUnlocks = Record<RankedTier, Date>;
 
-/** Per-tier minutes-before-kickoff a signup window opens — admin-editable via tier_unlock_settings. */
-export async function getTierUnlockOffsets(): Promise<Record<RankedTier, number>> {
-  const rows = await sql<{ tier: RankedTier; offset_minutes: number }[]>`
-    select tier, offset_minutes from tier_unlock_settings
-  `;
-  const byTier = Object.fromEntries(rows.map((r) => [r.tier, r.offset_minutes]));
-  return Object.fromEntries(TIER_ORDER.map((t) => [t, byTier[t] ?? 0])) as Record<RankedTier, number>;
+function normalizeTime(value: string): string {
+  return value.slice(0, 5);
 }
 
-export async function setTierUnlockOffset(tier: RankedTier, offsetMinutes: number): Promise<void> {
+/** Fixed local day/time defaults — deliberately independent of kickoff hour. */
+export async function getTierUnlockSettings(): Promise<TierUnlockSettings> {
+  const rows = await sql<{ tier: RankedTier; days_before: number; unlock_time: string }[]>`
+    select tier, days_before, unlock_time::text from tier_unlock_settings
+  `;
+  const byTier = Object.fromEntries(
+    rows.map((r) => [r.tier, { daysBefore: r.days_before, time: normalizeTime(r.unlock_time) }])
+  ) as Partial<TierUnlockSettings>;
+  const fallbacks: TierUnlockSettings = {
+    core: { daysBefore: 1, time: "17:00" },
+    regular: { daysBefore: 0, time: "10:30" },
+    extended: { daysBefore: 0, time: "13:00" },
+  };
+  return Object.fromEntries(TIER_ORDER.map((tier) => [tier, byTier[tier] ?? fallbacks[tier]])) as TierUnlockSettings;
+}
+
+export async function setTierUnlockSetting(
+  tier: RankedTier,
+  daysBefore: number,
+  time: string
+): Promise<void> {
   await sql`
-    insert into tier_unlock_settings (tier, offset_minutes)
-    values (${tier}, ${offsetMinutes})
-    on conflict (tier) do update set offset_minutes = ${offsetMinutes}
+    insert into tier_unlock_settings (tier, offset_minutes, days_before, unlock_time)
+    values (${tier}, 0, ${daysBefore}, ${time}::time)
+    on conflict (tier) do update set days_before = ${daysBefore}, unlock_time = ${time}::time
   `;
 }
 
-/** A stored offset as "N days before kickoff, at HH:MM" — for prefilling the admin settings form. */
-export function unlockOffsetToWindow(offsetMinutes: number): { daysBefore: number; timeMinutes: number } {
-  let timeMinutes = REFERENCE_KICKOFF_MINUTE - offsetMinutes;
-  let daysBefore = 0;
-  while (timeMinutes < 0) {
-    timeMinutes += 24 * 60;
-    daysBefore += 1;
-  }
-  return { daysBefore, timeMinutes };
-}
-
-/** Inverse of unlockOffsetToWindow — what the admin settings form submits. */
-export function windowToUnlockOffset(daysBefore: number, timeMinutes: number): number {
-  return daysBefore * 24 * 60 + (REFERENCE_KICKOFF_MINUTE - timeMinutes);
+export function resolveTierUnlockInputs(
+  gameStartsAt: Date | string,
+  settings: TierUnlockSettings
+): Record<RankedTier, string> {
+  return Object.fromEntries(
+    TIER_ORDER.map((tier) => {
+      const setting = settings[tier];
+      return [tier, utcToLocalInput(fixedLocalUnlockUtc(gameStartsAt, setting.daysBefore, setting.time))];
+    })
+  ) as Record<RankedTier, string>;
 }
 
 export type GameVisibility = "standard" | "restricted";
@@ -72,22 +85,64 @@ async function fetchCandidateGames(): Promise<Game[]> {
   `;
 }
 
-async function fetchAllowlists(gameIds: string[]) {
-  const map = new Map<string, { tiers: Set<string>; accountIds: Set<string> }>();
-  if (gameIds.length === 0) return map;
-  for (const id of gameIds) map.set(id, { tiers: new Set(), accountIds: new Set() });
+type VisibleGameRow = Game & {
+  custom_opens_at: string | null;
+  days_before: number | null;
+  unlock_time: string | null;
+};
 
-  const [tierRows, accountRows] = await Promise.all([
-    sql<{ game_id: string; tier: string }[]>`
-      select game_id, tier from game_visible_tiers where game_id in ${sql(gameIds)}
-    `,
-    sql<{ game_id: string; account_id: string }[]>`
-      select game_id, account_id from game_visible_accounts where game_id in ${sql(gameIds)}
-    `,
-  ]);
-  for (const row of tierRows) map.get(row.game_id)?.tiers.add(row.tier);
-  for (const row of accountRows) map.get(row.game_id)?.accountIds.add(row.account_id);
-  return map;
+/**
+ * Fetches visibility, the tier default, and any game override in one database
+ * round trip. The previous implementation needed four queries across two
+ * sequential waves before it could decide whether one game was claimable.
+ */
+async function fetchVisibleGames(
+  account: Account,
+  options: { gameId?: string; limit?: number } = {}
+): Promise<GameVisibilityInfo[]> {
+  const rankedTier: RankedTier = isRankedTier(account.tier) ? account.tier : "extended";
+  const rows = await sql<VisibleGameRow[]>`
+    select
+      g.id, g.starts_at, g.location, g.address, g.cap, g.is_open, g.visibility, g.created_by, g.created_at,
+      gtu.opens_at as custom_opens_at,
+      tus.days_before,
+      tus.unlock_time::text
+    from games g
+    left join game_tier_unlocks gtu on gtu.game_id = g.id and gtu.tier = ${rankedTier}
+    left join tier_unlock_settings tus on tus.tier = ${rankedTier}
+    where g.starts_at > now() - interval '3 hours'
+      ${options.gameId ? sql`and g.id = ${options.gameId}` : sql``}
+      and (
+        g.visibility = 'standard'
+        or exists (
+          select 1 from game_visible_tiers gvt
+          where gvt.game_id = g.id and gvt.tier = ${account.tier}
+        )
+        or exists (
+          select 1 from game_visible_accounts gva
+          where gva.game_id = g.id and gva.account_id = ${account.id}
+        )
+      )
+    order by g.starts_at asc
+    ${options.limit ? sql`limit ${options.limit}` : sql``}
+  `;
+
+  const fallbacks: TierUnlockSettings = {
+    core: { daysBefore: 1, time: "17:00" },
+    regular: { daysBefore: 0, time: "10:30" },
+    extended: { daysBefore: 0, time: "13:00" },
+  };
+  return rows.map((row) => {
+    const { custom_opens_at, days_before, unlock_time, ...game } = row;
+    if (game.visibility === "restricted") {
+      return { game, windowOpensAt: null, isClaimable: game.is_open };
+    }
+    const fallback = fallbacks[rankedTier];
+    const windowOpensAt = custom_opens_at
+      ? new Date(custom_opens_at)
+      : fixedLocalUnlockUtc(game.starts_at, days_before ?? fallback.daysBefore, unlock_time ?? fallback.time);
+    return { game, windowOpensAt, isClaimable: game.is_open && new Date() >= windowOpensAt };
+  });
 }
 
 /**
@@ -97,30 +152,11 @@ async function fetchAllowlists(gameIds: string[]) {
  * games can be.
  */
 export async function getVisibleUpcomingGames(account: Account): Promise<GameVisibilityInfo[]> {
-  const [games, unlockOffsets] = await Promise.all([fetchCandidateGames(), getTierUnlockOffsets()]);
-  const restrictedIds = games.filter((g) => g.visibility === "restricted").map((g) => g.id);
-  const allow = await fetchAllowlists(restrictedIds);
-
-  const rankedTier: RankedTier = isRankedTier(account.tier) ? account.tier : "extended";
-  const out: GameVisibilityInfo[] = [];
-
-  for (const game of games) {
-    if (game.visibility === "restricted") {
-      const list = allow.get(game.id);
-      const visible = !!list && (list.tiers.has(account.tier) || list.accountIds.has(account.id));
-      if (!visible) continue;
-      out.push({ game, windowOpensAt: null, isClaimable: game.is_open });
-    } else {
-      const offsetMinutes = unlockOffsets[rankedTier];
-      const windowOpensAt = new Date(new Date(game.starts_at).getTime() - offsetMinutes * 60_000);
-      out.push({ game, windowOpensAt, isClaimable: game.is_open && new Date() >= windowOpensAt });
-    }
-  }
-  return out;
+  return fetchVisibleGames(account);
 }
 
 export async function getNextVisibleGame(account: Account): Promise<GameVisibilityInfo | null> {
-  const games = await getVisibleUpcomingGames(account);
+  const games = await fetchVisibleGames(account, { limit: 1 });
   return games[0] ?? null;
 }
 
@@ -130,8 +166,7 @@ export async function getNextVisibleGame(account: Account): Promise<GameVisibili
  * things (a standard game can be visible before its tier window opens).
  */
 export async function assertGameVisible(account: Account, gameId: string): Promise<GameVisibilityInfo> {
-  const games = await getVisibleUpcomingGames(account);
-  const match = games.find((g) => g.game.id === gameId);
+  const [match] = await fetchVisibleGames(account, { gameId, limit: 1 });
   if (!match) throw new Error("Game not visible to this account");
   return match;
 }
@@ -139,6 +174,24 @@ export async function assertGameVisible(account: Account, gameId: string): Promi
 /** All games worth managing from the admin list, regardless of visibility mode. */
 export async function listUpcomingGames(): Promise<Game[]> {
   return fetchCandidateGames();
+}
+
+export async function getNextAdminGameSummary(): Promise<{
+  game: Game | null;
+  confirmedCount: number;
+}> {
+  const [row] = await sql<(Game & { confirmed_count: number })[]>`
+    select
+      g.id, g.starts_at, g.location, g.address, g.cap, g.is_open, g.visibility, g.created_by, g.created_at,
+      (select count(*)::int from rsvps r where r.game_id = g.id and r.status = 'confirmed') as confirmed_count
+    from games g
+    where g.starts_at > now() - interval '3 hours'
+    order by g.starts_at asc
+    limit 1
+  `;
+  if (!row) return { game: null, confirmedCount: 0 };
+  const { confirmed_count: confirmedCount, ...game } = row;
+  return { game, confirmedCount };
 }
 
 export async function getGameById(id: string): Promise<Game | null> {
@@ -154,6 +207,15 @@ export async function getGameAllowlist(gameId: string): Promise<{ tiers: RankedT
   return { tiers: tierRows.map((r) => r.tier), accountIds: accountRows.map((r) => r.account_id) };
 }
 
+export async function getGameTierUnlocks(gameId: string): Promise<GameTierUnlocks | null> {
+  const rows = await sql<{ tier: RankedTier; opens_at: string }[]>`
+    select tier, opens_at from game_tier_unlocks where game_id = ${gameId}
+  `;
+  if (rows.length !== TIER_ORDER.length) return null;
+  const byTier = Object.fromEntries(rows.map((row) => [row.tier, new Date(row.opens_at)]));
+  return byTier as GameTierUnlocks;
+}
+
 type GameFormFields = {
   startsAt: Date;
   location: string;
@@ -163,6 +225,7 @@ type GameFormFields = {
   visibility: GameVisibility;
   visibleTiers?: RankedTier[];
   visibleAccountIds?: string[];
+  tierUnlocks?: GameTierUnlocks | null;
 };
 
 async function writeAllowlist(tx: TransactionSql, gameId: string, fields: GameFormFields) {
@@ -183,6 +246,17 @@ async function writeAllowlist(tx: TransactionSql, gameId: string, fields: GameFo
   }
 }
 
+async function writeTierUnlocks(tx: TransactionSql, gameId: string, fields: GameFormFields) {
+  await tx`delete from game_tier_unlocks where game_id = ${gameId}`;
+  if (fields.visibility !== "standard" || !fields.tierUnlocks) return;
+  const rows = TIER_ORDER.map((tier) => ({
+    game_id: gameId,
+    tier,
+    opens_at: fields.tierUnlocks?.[tier].toISOString(),
+  }));
+  await tx`insert into game_tier_unlocks ${tx(rows, "game_id", "tier", "opens_at")}`;
+}
+
 /** Creates a one-off game (standard or restricted) — the admin "new game" flow. */
 export async function createGame(fields: GameFormFields & { createdBy: string }): Promise<Game> {
   return sql.begin(async (tx) => {
@@ -193,6 +267,7 @@ export async function createGame(fields: GameFormFields & { createdBy: string })
     `;
     const game = rows[0];
     await writeAllowlist(tx, game.id, fields);
+    await writeTierUnlocks(tx, game.id, fields);
     return game;
   });
 }
@@ -213,6 +288,7 @@ export async function updateGame(id: string, fields: GameFormFields): Promise<Ga
     `;
     const game = rows[0];
     await writeAllowlist(tx, id, fields);
+    await writeTierUnlocks(tx, id, fields);
     return game;
   });
 }
@@ -237,20 +313,35 @@ export type GameTemplate = {
   cap: number;
   visibility: GameVisibility;
   visible_tiers: RankedTier[];
+  tier_unlocks: TierUnlockSettings | null;
 };
 
 /** The two admin-editable quick-create presets for the "new one-off game" form. */
 export async function getGameTemplates(): Promise<GameTemplate[]> {
-  return sql<GameTemplate[]>`
+  const [templates, unlockRows] = await Promise.all([
+    sql<Omit<GameTemplate, "tier_unlocks">[]>`
     select slot, name, location, address, cap, visibility, visible_tiers from game_templates order by slot asc
-  `;
+    `,
+    sql<{ template_slot: 1 | 2; tier: RankedTier; days_before: number; unlock_time: string }[]>`
+      select template_slot, tier, days_before, unlock_time::text from game_template_tier_unlocks
+      order by template_slot, tier
+    `,
+  ]);
+  return templates.map((template) => {
+    const rows = unlockRows.filter((row) => row.template_slot === template.slot);
+    const tier_unlocks = rows.length === TIER_ORDER.length
+      ? Object.fromEntries(rows.map((row) => [
+          row.tier,
+          { daysBefore: row.days_before, time: normalizeTime(row.unlock_time) },
+        ])) as TierUnlockSettings
+      : null;
+    return { ...template, tier_unlocks };
+  });
 }
 
 export async function getGameTemplate(slot: 1 | 2): Promise<GameTemplate | null> {
-  const [row] = await sql<GameTemplate[]>`
-    select slot, name, location, address, cap, visibility, visible_tiers from game_templates where slot = ${slot}
-  `;
-  return row ?? null;
+  const templates = await getGameTemplates();
+  return templates.find((template) => template.slot === slot) ?? null;
 }
 
 export async function updateGameTemplate(fields: {
@@ -261,11 +352,26 @@ export async function updateGameTemplate(fields: {
   cap: number;
   visibility: GameVisibility;
   visibleTiers: RankedTier[];
+  tierUnlocks: TierUnlockSettings | null;
 }): Promise<void> {
-  await sql`
-    update game_templates set
-      name = ${fields.name}, location = ${fields.location}, address = ${fields.address}, cap = ${fields.cap},
-      visibility = ${fields.visibility}, visible_tiers = ${sql.array(fields.visibleTiers)}
-    where slot = ${fields.slot}
-  `;
+  await sql.begin(async (tx) => {
+    await tx`
+      update game_templates set
+        name = ${fields.name}, location = ${fields.location}, address = ${fields.address}, cap = ${fields.cap},
+        visibility = ${fields.visibility}, visible_tiers = ${tx.array(fields.visibleTiers)}
+      where slot = ${fields.slot}
+    `;
+    await tx`delete from game_template_tier_unlocks where template_slot = ${fields.slot}`;
+    if (fields.visibility !== "standard" || !fields.tierUnlocks) return;
+    const rows = TIER_ORDER.map((tier) => ({
+      template_slot: fields.slot,
+      tier,
+      days_before: fields.tierUnlocks?.[tier].daysBefore,
+      unlock_time: fields.tierUnlocks?.[tier].time,
+    }));
+    await tx`
+      insert into game_template_tier_unlocks
+        ${tx(rows, "template_slot", "tier", "days_before", "unlock_time")}
+    `;
+  });
 }

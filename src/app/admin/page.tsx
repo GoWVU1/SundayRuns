@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { requireAccount } from "@/lib/auth";
-import { listUpcomingGames } from "@/lib/games";
-import { getRoster } from "@/lib/rsvps";
+import { getNextAdminGameSummary } from "@/lib/games";
 import { countAccounts } from "@/lib/accounts";
 import { listPendingGuestRequests } from "@/lib/guests";
 import { getGamesNeedingAttendance } from "@/lib/attendance";
@@ -9,15 +8,14 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 
 export default async function AdminDashboardPage() {
-  const [account, games, memberCount, pendingGuests, needingAttendance] = await Promise.all([
+  const [account, gameSummary, memberCount, pendingGuests, needingAttendance] = await Promise.all([
     requireAccount(),
-    listUpcomingGames(),
+    getNextAdminGameSummary(),
     countAccounts(),
     listPendingGuestRequests(),
     getGamesNeedingAttendance(),
   ]);
-  const game = games[0] ?? null;
-  const confirmedCount = game ? (await getRoster(game.id)).filter((r) => r.status === "confirmed").length : 0;
+  const { game, confirmedCount } = gameSummary;
   const cap = game?.cap ?? 16;
 
   return (
@@ -83,6 +81,18 @@ export default async function AdminDashboardPage() {
                   ? "All caught up"
                   : `${needingAttendance.length} game${needingAttendance.length === 1 ? "" : "s"} need${needingAttendance.length === 1 ? "s" : ""} it`}
               </span>
+            </Link>
+            <Link
+              href="/admin/attendance"
+              className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
+            >
+              <div className="flex h-5 items-end gap-1">
+                <div className="h-2 w-1.5 bg-navy" />
+                <div className="h-4 w-1.5 bg-gold" />
+                <div className="h-5 w-1.5 bg-navy" />
+              </div>
+              <span className="font-display text-[13px] tracking-wide text-navy">ATTENDANCE STATS</span>
+              <span className="text-[10px] text-muted">Streaks and missed games</span>
             </Link>
             {account.fantasy_member && (
               <Link
