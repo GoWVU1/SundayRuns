@@ -39,6 +39,7 @@ export default async function AdminFantasyPage() {
               <Link
                 key={place}
                 href={`/admin/fantasy/champion/${place}?year=${editYear}`}
+                prefetch={false}
                 className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-navy/30 bg-card px-4 py-3.5"
               >
                 <div
@@ -107,6 +108,7 @@ export default async function AdminFantasyPage() {
 
           <Link
             href="/admin/fantasy/loser"
+            prefetch={false}
             className="flex items-center gap-3.5 rounded-2xl border border-gold/30 bg-navy px-4 py-3.5 text-left"
           >
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold">
@@ -123,6 +125,7 @@ export default async function AdminFantasyPage() {
 
           <Link
             href="/admin/fantasy/contract"
+            prefetch={false}
             className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
           >
             <div className="h-1 w-[26px] rounded-full bg-gold" />

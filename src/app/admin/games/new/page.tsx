@@ -40,6 +40,7 @@ export default async function NewGamePage({
                 <Link
                   key={t.slot}
                   href={`/admin/games/new?template=${t.slot}`}
+                  prefetch={false}
                   className={`flex-1 rounded-[14px] border-[1.5px] p-3 text-center ${
                     chosen?.slot === t.slot ? "border-navy bg-navy text-cream" : "border-navy/25 text-navy"
                   }`}

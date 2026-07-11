@@ -25,7 +25,11 @@ export async function Header({
       <div className="flex items-center justify-between bg-navy px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           {backHref && (
-            <Link href={backHref} className="mr-0.5 font-display text-[22px] text-gold">
+            <Link
+              href={backHref}
+              prefetch={backHref.startsWith("/admin") ? false : undefined}
+              className="mr-0.5 font-display text-[22px] text-gold"
+            >
               ←
             </Link>
           )}

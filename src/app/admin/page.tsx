@@ -26,6 +26,7 @@ export default async function AdminDashboardPage() {
           {pendingGuests.length > 0 && (
             <Link
               href="/admin/guests"
+              prefetch={false}
               className="flex items-center gap-3.5 rounded-2xl border border-gold/30 bg-navy-light px-4 py-3.5"
             >
               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold">
@@ -61,6 +62,7 @@ export default async function AdminDashboardPage() {
           <div className="grid grid-cols-2 gap-2.5">
             <Link
               href="/admin/members"
+              prefetch={false}
               className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
             >
               <div className="relative h-5 w-7">
@@ -72,6 +74,7 @@ export default async function AdminDashboardPage() {
             </Link>
             <Link
               href={needingAttendance[0] ? `/admin/attendance/${needingAttendance[0].id}` : "/admin/games"}
+              prefetch={false}
               className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
             >
               <div className="h-5 w-4 border-b-[3px] border-l-[3px] border-navy" style={{ transform: "rotate(-45deg)" }} />
@@ -84,6 +87,7 @@ export default async function AdminDashboardPage() {
             </Link>
             <Link
               href="/admin/attendance"
+              prefetch={false}
               className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
             >
               <div className="flex h-5 items-end gap-1">
@@ -97,6 +101,7 @@ export default async function AdminDashboardPage() {
             {account.fantasy_member && (
               <Link
                 href="/admin/fantasy"
+                prefetch={false}
                 className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
               >
                 <div className="h-5 w-5 rounded-full border-[3px] border-navy" />

@@ -19,6 +19,7 @@ export default async function AdminAttendanceStatsPage() {
           {needingAttendance.length > 0 && (
             <Link
               href={`/admin/attendance/${needingAttendance[0].id}`}
+              prefetch={false}
               className="rounded-full bg-gold py-3 text-center text-xs font-extrabold tracking-wide text-navy"
             >
               MARK {needingAttendance.length} UNFINISHED GAME{needingAttendance.length === 1 ? "" : "S"}
@@ -63,6 +64,7 @@ export default async function AdminAttendanceStatsPage() {
                       <Link
                         key={game.gameId}
                         href={`/admin/attendance/${game.gameId}`}
+                        prefetch={false}
                         className="flex items-center justify-between gap-3 rounded-[10px] border border-navy/15 px-3 py-2"
                       >
                         <div className="flex flex-col gap-0.5">

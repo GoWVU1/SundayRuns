@@ -8,7 +8,12 @@ export function BottomNav({
   return (
     <div className="flex flex-shrink-0 border-t border-gold/20 bg-navy">
       {items.map((item) => (
-        <Link key={item.href} href={item.href} className="flex-1 py-3 pb-2.5 text-center">
+        <Link
+          key={item.href}
+          href={item.href}
+          prefetch={item.href.startsWith("/admin") ? false : undefined}
+          className="flex-1 py-3 pb-2.5 text-center"
+        >
           <span
             className={`block font-display text-xs tracking-wide ${
               item.active ? "text-gold" : "text-cream/50"
