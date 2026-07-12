@@ -27,8 +27,14 @@ export function buildGoogleCalendarUrl(game: CalendarGame): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-/** A data: URI .ics download — works for Apple Calendar, Outlook, and anything else that isn't Google. */
-export function buildIcsDataUri(game: CalendarGame): string {
+/**
+ * Raw .ics file text, served from a real route (see app/calendar/[gameId]/route.ts)
+ * rather than a data: URI — iOS Safari doesn't support triggering downloads from
+ * data: URIs via the `download` attribute, so tapping "+ APPLE / OUTLOOK" silently
+ * did nothing on iPhone. A real response with Content-Type: text/calendar is what
+ * iOS hands off to Calendar.app.
+ */
+export function buildIcsContent(game: CalendarGame): string {
   const start = new Date(game.starts_at);
   const end = new Date(start.getTime() + GAME_DURATION_HOURS * 60 * 60 * 1000);
   const lines = [
@@ -46,5 +52,5 @@ export function buildIcsDataUri(game: CalendarGame): string {
     "END:VEVENT",
     "END:VCALENDAR",
   ];
-  return `data:text/calendar;charset=utf-8,${encodeURIComponent(lines.join("\r\n"))}`;
+  return lines.join("\r\n");
 }

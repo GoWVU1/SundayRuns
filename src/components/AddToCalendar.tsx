@@ -1,4 +1,4 @@
-import { buildGoogleCalendarUrl, buildIcsDataUri } from "@/lib/calendar";
+import { buildGoogleCalendarUrl } from "@/lib/calendar";
 
 export function AddToCalendar({
   game,
@@ -16,8 +16,7 @@ export function AddToCalendar({
         + GOOGLE CALENDAR
       </a>
       <a
-        href={buildIcsDataUri(game)}
-        download="sunday-run.ics"
+        href={`/calendar/${game.id}`}
         className="flex-1 rounded-full border border-gold/40 py-2 text-center text-[10px] font-extrabold tracking-wide text-gold"
       >
         + APPLE / OUTLOOK
