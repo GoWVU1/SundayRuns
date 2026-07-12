@@ -8,6 +8,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { GameFormFields } from "@/components/GameFormFields";
 import { PillSubmitButton } from "@/components/SubmitButton";
+import { TierBadge } from "@/components/TierBadge";
 import { adminEnrollRsvpAction, updateGameAction } from "@/app/actions/games";
 
 export default async function EditGamePage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,6 +21,8 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
   ]);
   if (!game) notFound();
 
+  const confirmed = roster.filter((r) => r.status === "confirmed");
+  const waitlisted = roster.filter((r) => r.status === "waitlisted");
   const members = accounts.map((a) => ({ id: a.id, name: a.name, tier: a.tier }));
   const tierUnlockInputs = customUnlocks
     ? Object.fromEntries(
@@ -51,6 +54,56 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
               SAVE CHANGES
             </PillSubmitButton>
           </form>
+
+          <div className="flex flex-col gap-3.5 rounded-2xl border-[1.5px] border-navy/20 bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold tracking-wide text-navy">CONFIRMED ROSTER</span>
+              <span className="text-[10px] font-extrabold text-muted">
+                {confirmed.length}/{game.cap}
+              </span>
+            </div>
+            {confirmed.length === 0 ? (
+              <span className="text-[11px] text-muted">No one confirmed yet.</span>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {confirmed.map((entry, i) => (
+                  <div key={entry.id} className="flex items-center gap-2">
+                    <span className="w-5 flex-shrink-0 font-display text-sm text-[#9c8f6e]">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-navy">{entry.name}</span>
+                    {entry.sponsor_name && (
+                      <span className="flex-shrink-0 whitespace-nowrap text-[10px] italic text-muted">
+                        guest of {entry.sponsor_name}
+                      </span>
+                    )}
+                    <TierBadge tier={entry.tier} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {waitlisted.length > 0 && (
+              <>
+                <div className="flex items-center justify-between border-t border-navy/10 pt-3">
+                  <span className="text-xs font-extrabold tracking-wide text-navy">WAITLIST</span>
+                  <span className="text-[10px] font-extrabold text-muted">{waitlisted.length}</span>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {waitlisted.map((entry, i) => (
+                    <div key={entry.id} className="flex items-center gap-2">
+                      <span className="w-5 flex-shrink-0 font-display text-sm text-[#9c8f6e]">{i + 1}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-navy">{entry.name}</span>
+                      {entry.sponsor_name && (
+                        <span className="flex-shrink-0 whitespace-nowrap text-[10px] italic text-muted">
+                          guest of {entry.sponsor_name}
+                        </span>
+                      )}
+                      <TierBadge tier={entry.tier} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <form
             action={adminEnrollRsvpAction}
@@ -90,18 +143,6 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
               </select>
             </label>
             <PillSubmitButton pendingLabel="ADDING…" variant="navy">ADD / UPDATE MEMBER</PillSubmitButton>
-            {roster.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 border-t border-navy/10 pt-3">
-                {roster.map((entry) => (
-                  <span
-                    key={entry.id}
-                    className="rounded-full border border-navy/20 px-2.5 py-1 text-[10px] font-bold text-navy"
-                  >
-                    {entry.name} · {entry.status === "confirmed" ? "IN" : "WAIT"}
-                  </span>
-                ))}
-              </div>
-            )}
           </form>
         </div>
       </main>

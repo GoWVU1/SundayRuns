@@ -215,6 +215,29 @@ export default async function HomePage() {
             ))}
           </div>
 
+          {waitlisted.length > 0 && (
+            <>
+              <div className="flex items-center gap-2.5">
+                <span className="font-display text-[15px] tracking-wide text-navy">WAITLIST</span>
+                <div className="h-0.5 flex-1 bg-navy" />
+                <span className="text-[11px] font-extrabold text-muted">{waitlisted.length}</span>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border-[1.5px] border-navy/30 bg-card">
+                {waitlisted.map((p, i) => (
+                  <RosterRow
+                    key={p.id}
+                    num={i + 1}
+                    name={p.name}
+                    tier={p.tier}
+                    sponsorName={p.sponsor_name}
+                    isChampion={p.account_id === championAccountId}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
           {canInvite && (
             <Link
               href="/guests/new"
