@@ -1,11 +1,5 @@
 import { notFound } from "next/navigation";
-import {
-  getGameAllowlist,
-  getGameById,
-  getGameTierUnlocks,
-  getTierUnlockSettings,
-  resolveTierUnlockInputs,
-} from "@/lib/games";
+import { getGameEditData, getTierUnlockSettings, resolveTierUnlockInputs } from "@/lib/games";
 import { listAccounts } from "@/lib/accounts";
 import { getRoster } from "@/lib/rsvps";
 import { utcToLocalInput } from "@/lib/time";
@@ -18,11 +12,9 @@ import { adminEnrollRsvpAction, updateGameAction } from "@/app/actions/games";
 
 export default async function EditGamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [game, allowlist, accounts, customUnlocks, globalUnlocks, roster] = await Promise.all([
-    getGameById(id),
-    getGameAllowlist(id),
+  const [{ game, allowlist, tierUnlocks: customUnlocks }, accounts, globalUnlocks, roster] = await Promise.all([
+    getGameEditData(id),
     listAccounts(),
-    getGameTierUnlocks(id),
     getTierUnlockSettings(),
     getRoster(id),
   ]);

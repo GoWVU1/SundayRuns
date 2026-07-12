@@ -216,6 +216,52 @@ export async function getGameTierUnlocks(gameId: string): Promise<GameTierUnlock
   return byTier as GameTierUnlocks;
 }
 
+/**
+ * The admin game-editor screen's game/allowlist/tier-unlocks in one round trip
+ * instead of four (getGameById + the 2 allowlist queries + getGameTierUnlocks).
+ * That page already fires several other concurrent queries (members, global
+ * tier defaults, roster) — cutting this cluster to one query keeps the total
+ * comfortably inside the connection pool instead of forcing queries to queue,
+ * which is what left orphaned "active, ClientRead" sessions behind when the
+ * request occasionally ran long enough to hit the function timeout mid-flight.
+ */
+export async function getGameEditData(id: string): Promise<{
+  game: Game | null;
+  allowlist: { tiers: RankedTier[]; accountIds: string[] };
+  tierUnlocks: GameTierUnlocks | null;
+}> {
+  const [row] = await sql<
+    (Game & {
+      visible_tiers: RankedTier[];
+      visible_account_ids: string[];
+      tier_unlocks: Record<RankedTier, string> | null;
+    })[]
+  >`
+    select
+      g.id, g.starts_at, g.location, g.address, g.cap, g.is_open, g.visibility, g.created_by, g.created_at,
+      coalesce(
+        (select jsonb_agg(tier) from game_visible_tiers where game_id = g.id), '[]'::jsonb
+      ) as visible_tiers,
+      coalesce(
+        (select jsonb_agg(account_id) from game_visible_accounts where game_id = g.id), '[]'::jsonb
+      ) as visible_account_ids,
+      (select jsonb_object_agg(tier, opens_at) from game_tier_unlocks where game_id = g.id) as tier_unlocks
+    from games g
+    where g.id = ${id}
+  `;
+  if (!row) return { game: null, allowlist: { tiers: [], accountIds: [] }, tierUnlocks: null };
+
+  const { visible_tiers, visible_account_ids, tier_unlocks, ...game } = row;
+  const tierUnlocks =
+    tier_unlocks && Object.keys(tier_unlocks).length === TIER_ORDER.length
+      ? (Object.fromEntries(
+          Object.entries(tier_unlocks).map(([tier, opensAt]) => [tier, new Date(opensAt)])
+        ) as GameTierUnlocks)
+      : null;
+
+  return { game, allowlist: { tiers: visible_tiers, accountIds: visible_account_ids }, tierUnlocks };
+}
+
 type GameFormFields = {
   startsAt: Date;
   location: string;
