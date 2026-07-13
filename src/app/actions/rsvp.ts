@@ -23,7 +23,8 @@ export async function cancelRsvpAction(formData: FormData) {
   const gameId = String(formData.get("gameId") || "");
 
   const { game } = await assertGameVisible(account, gameId);
-  const { promotedAccountId } = await cancelRsvp(gameId, account.id);
+  const { promotedAccountId, blocked } = await cancelRsvp(gameId, account.id);
+  if (blocked) return;
   revalidatePath("/");
 
   // The roster response should not wait on an external push service. Next's

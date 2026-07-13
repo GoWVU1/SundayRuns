@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAccount } from "@/lib/auth";
 import { getNextVisibleGame } from "@/lib/games";
 import { getRosterWithStreaks } from "@/lib/rsvps";
-import { formatGameDateTime, formatUnlockLabel } from "@/lib/time";
+import { formatGameDateTime, formatUnlockLabel, isPastCancelCutoff } from "@/lib/time";
 import { TIER_LABELS, isRankedTier } from "@/lib/tiers";
 import { canSponsorGuest } from "@/lib/guests";
 import { getLatestChampionAccountId } from "@/lib/fantasy";
@@ -56,6 +56,7 @@ export default async function HomePage() {
 
   const isOff = !game || !game.is_open;
   const isWindowLocked = !isOff && !mine && !isClaimable;
+  const cancelLocked = mine?.status === "confirmed" && game !== null && isPastCancelCutoff(game.starts_at);
 
   return (
     <>
@@ -162,13 +163,20 @@ export default async function HomePage() {
               </div>
               <AddToCalendar game={game} />
               <div className="h-px bg-gold/25" />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-navy">Can&apos;t make it anymore?</span>
-                <form action={cancelRsvpAction}>
-                  <input type="hidden" name="gameId" value={game.id} />
-                  <TagSubmitButton variant="danger">GIVE UP MY SPOT</TagSubmitButton>
-                </form>
-              </div>
+              {cancelLocked ? (
+                <span className="text-xs leading-relaxed text-muted-navy">
+                  Cancellations close 2 hours before kickoff so anyone on the waitlist gets fair
+                  notice. Text the commissioner if something came up.
+                </span>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-navy">Can&apos;t make it anymore?</span>
+                  <form action={cancelRsvpAction}>
+                    <input type="hidden" name="gameId" value={game.id} />
+                    <TagSubmitButton variant="danger">GIVE UP MY SPOT</TagSubmitButton>
+                  </form>
+                </div>
+              )}
             </Card>
           )}
 

@@ -66,6 +66,14 @@ export function formatUnlockLabel(date: Date): string {
   return DateTime.fromJSDate(date).setZone(APP_TIMEZONE).toFormat("ccc h:mm a");
 }
 
+/** Confirmed players can't drop within this window of kickoff — gives a promoted waitlister real notice. */
+export const CANCEL_CUTOFF_HOURS = 2;
+
+export function isPastCancelCutoff(startsAt: Date | string): boolean {
+  const cutoff = new Date(startsAt).getTime() - CANCEL_CUTOFF_HOURS * 60 * 60 * 1000;
+  return Date.now() >= cutoff;
+}
+
 /** Default start time for a newly-created standard game: the coming Sunday, 6:00 PM. */
 export function nextSunday6pmUtc(): Date {
   const now = DateTime.now().setZone(APP_TIMEZONE);

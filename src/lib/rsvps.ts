@@ -1,6 +1,7 @@
 import "server-only";
 import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
+import { isPastCancelCutoff } from "@/lib/time";
 
 export type RsvpStatus = "confirmed" | "waitlisted";
 
@@ -139,11 +140,24 @@ export async function adminEnrollRsvp(
   });
 }
 
-export type CancelResult = { promotedAccountId: string | null };
+export type CancelResult = { promotedAccountId: string | null; blocked?: boolean };
 
 export async function cancelRsvp(gameId: string, accountId: string): Promise<CancelResult> {
   return sql.begin(async (tx) => {
-    await tx`select id from games where id = ${gameId} for update`;
+    const [game] = await tx<{ starts_at: string }[]>`
+      select starts_at from games where id = ${gameId} for update
+    `;
+    if (!game) return { promotedAccountId: null };
+
+    const [existing] = await tx<{ status: RsvpStatus }[]>`
+      select status from rsvps where game_id = ${gameId} and account_id = ${accountId}
+    `;
+    if (!existing) return { promotedAccountId: null };
+
+    // Only confirmed drops are gated — leaving the waitlist never displaces anyone.
+    if (existing.status === "confirmed" && isPastCancelCutoff(game.starts_at)) {
+      return { promotedAccountId: null, blocked: true };
+    }
 
     const [mine] = await tx<{ status: RsvpStatus }[]>`
       delete from rsvps
