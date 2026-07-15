@@ -1,14 +1,20 @@
 import { listAccounts } from "@/lib/accounts";
-import { getInjuries } from "@/lib/injuries";
+import { getInjuries, getIlVisibleAccountIds } from "@/lib/injuries";
 import { formatShortDate } from "@/lib/time";
 import { getTierLabel } from "@/lib/tiers";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { PillSubmitButton, ActionSubmitButton } from "@/components/SubmitButton";
-import { setInjuryAction, clearInjuryAction } from "@/app/actions/injuries";
+import { AccountMultiSelect } from "@/components/AccountMultiSelect";
+import { setInjuryAction, clearInjuryAction, setIlAccessAction } from "@/app/actions/injuries";
 
 export default async function AdminInjuriesPage() {
-  const [accounts, injuries] = await Promise.all([listAccounts(), getInjuries()]);
+  const [accounts, injuries, visibleAccountIds] = await Promise.all([
+    listAccounts(),
+    getInjuries(),
+    getIlVisibleAccountIds(),
+  ]);
+  const nonCoreAccounts = accounts.filter((a) => a.tier !== "core");
 
   return (
     <>
@@ -99,6 +105,22 @@ export default async function AdminInjuriesPage() {
               ))
             )}
           </div>
+
+          <form
+            action={setIlAccessAction}
+            className="flex flex-col gap-3 rounded-2xl border-[1.5px] border-navy/20 bg-card p-4"
+          >
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-extrabold tracking-wide text-navy">WHO CAN SEE THE IL</span>
+              <span className="text-[10px] text-muted">
+                Hall of Fame members always have access. Pick anyone else who should too.
+              </span>
+            </div>
+            <AccountMultiSelect members={nonCoreAccounts} defaultSelectedIds={visibleAccountIds} />
+            <PillSubmitButton pendingLabel="SAVING…" variant="navy">
+              SAVE ACCESS
+            </PillSubmitButton>
+          </form>
         </div>
       </main>
       <BottomNav

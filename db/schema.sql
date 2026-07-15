@@ -550,3 +550,11 @@ create table if not exists injuries (
   created_at timestamptz not null default now()
 );
 alter table injuries enable row level security;
+
+-- Hall of Fame (core tier) members always see the IL; this table grants
+-- individually-picked non-core accounts the same access without changing
+-- their tier.
+create table if not exists il_visible_accounts (
+  account_id uuid primary key references accounts(id) on delete cascade
+);
+alter table il_visible_accounts enable row level security;

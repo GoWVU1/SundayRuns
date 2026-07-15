@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { COOKIE_NAME, getAccountForToken } from "@/lib/auth";
+import { canViewIL } from "@/lib/injuries";
 
 const PUBLIC_PATHS = ["/login", "/signup"];
 // Informational, not an auth form — viewable whether logged in or not, unlike PUBLIC_PATHS
@@ -40,6 +41,14 @@ export async function proxy(request: NextRequest) {
   // Fantasy membership is independent of is_admin — an admin who isn't
   // personally in the league shouldn't see it either.
   if (pathname.startsWith("/fantasy") && account && !account.fantasy_member) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  // /admin/il is exempt — it's already gated by the /admin check above, and an
+  // admin can manage everyone else's entries regardless of their own IL access.
+  if (pathname.startsWith("/il") && account && !(await canViewIL(account))) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

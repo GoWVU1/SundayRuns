@@ -1,5 +1,6 @@
+import { redirect } from "next/navigation";
 import { requireAccount } from "@/lib/auth";
-import { getInjuries } from "@/lib/injuries";
+import { getInjuries, canViewIL } from "@/lib/injuries";
 import { formatShortDate } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -8,6 +9,7 @@ import { memberNavItems } from "@/lib/nav";
 
 export default async function InjuredListPage() {
   const account = await requireAccount();
+  if (!(await canViewIL(account))) redirect("/");
   const injuries = await getInjuries();
 
   return (
