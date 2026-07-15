@@ -4,16 +4,18 @@ import { getNextAdminGameSummary } from "@/lib/games";
 import { countAccounts } from "@/lib/accounts";
 import { listPendingGuestRequests } from "@/lib/guests";
 import { getGamesNeedingAttendance } from "@/lib/attendance";
+import { getInjuries } from "@/lib/injuries";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 
 export default async function AdminDashboardPage() {
-  const [account, gameSummary, memberCount, pendingGuests, needingAttendance] = await Promise.all([
+  const [account, gameSummary, memberCount, pendingGuests, needingAttendance, injuries] = await Promise.all([
     requireAccount(),
     getNextAdminGameSummary(),
     countAccounts(),
     listPendingGuestRequests(),
     getGamesNeedingAttendance(),
+    getInjuries(),
   ]);
   const { game, confirmedCount } = gameSummary;
   const cap = game?.cap ?? 16;
@@ -97,6 +99,17 @@ export default async function AdminDashboardPage() {
               </div>
               <span className="font-display text-[13px] tracking-wide text-navy">ATTENDANCE STATS</span>
               <span className="text-[10px] text-muted">Streaks and missed games</span>
+            </Link>
+            <Link
+              href="/admin/il"
+              prefetch={false}
+              className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
+            >
+              <div className="h-5 w-5 rounded-full border-[3px] border-danger" />
+              <span className="font-display text-[13px] tracking-wide text-navy">MANAGE IL</span>
+              <span className="text-[10px] text-muted">
+                {injuries.length === 0 ? "Nobody's out" : `${injuries.length} out right now`}
+              </span>
             </Link>
             {account.fantasy_member && (
               <Link

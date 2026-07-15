@@ -56,6 +56,16 @@ export function formatGameDateTime(date: Date | string): string {
   return `${formatGameDateLabel(date)} · ${formatGameTimeLabel(date)}`;
 }
 
+/**
+ * "Aug 1" — for injury/recovery-timeline dates. These are bare calendar dates
+ * with no time-of-day, so parse and format both in UTC rather than
+ * APP_TIMEZONE — converting a date-only value through a timezone can shift
+ * it to the wrong calendar day.
+ */
+export function formatShortDate(isoDate: string): string {
+  return DateTime.fromISO(isoDate, { zone: "utc" }).toFormat("LLL d");
+}
+
 /** "Mar 2024" — for "member since" copy on the account profile page. */
 export function formatMonthYear(date: Date | string): string {
   return DateTime.fromJSDate(new Date(date)).setZone(APP_TIMEZONE).toFormat("LLL yyyy");

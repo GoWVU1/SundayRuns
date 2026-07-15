@@ -535,3 +535,18 @@ create table if not exists game_template_tier_unlocks (
   primary key (template_slot, tier)
 );
 alter table game_template_tier_unlocks enable row level security;
+
+-- ============================================================
+-- Stage J — Injured List (IL)
+-- ============================================================
+-- One active entry per account: re-saving overwrites in place, started_at is
+-- only set on the initial insert so editing a description/return date later
+-- doesn't reset how long someone's been out. Admin-managed only.
+create table if not exists injuries (
+  account_id uuid primary key references accounts(id) on delete cascade,
+  description text not null,
+  started_at date not null default current_date,
+  expected_return date,
+  created_at timestamptz not null default now()
+);
+alter table injuries enable row level security;
