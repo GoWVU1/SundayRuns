@@ -10,20 +10,20 @@ export type InjuryEntry = {
   expected_return: string | null;
 };
 
-/** Soonest-expected-back first; open-ended entries (no return date) sort last. */
+/** Oldest injury first — expected_return is free text now, so there's no date left to sort it by. */
 export async function getInjuries(): Promise<InjuryEntry[]> {
   return sql<InjuryEntry[]>`
     select
       i.account_id, a.name, a.tier, i.description,
       i.started_at::text as started_at,
-      i.expected_return::text as expected_return
+      i.expected_return
     from injuries i
     join accounts a on a.id = i.account_id
-    order by i.expected_return asc nulls last, i.started_at asc
+    order by i.started_at asc
   `;
 }
 
-/** Re-saving for the same account overwrites description/return date but keeps the original started_at. */
+/** Re-saving for the same account overwrites description/timeline but keeps the original started_at. */
 export async function setInjury(
   accountId: string,
   description: string,

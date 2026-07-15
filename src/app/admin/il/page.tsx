@@ -57,11 +57,11 @@ export default async function AdminInjuriesPage() {
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-[10px] font-extrabold tracking-[2px] text-muted">
-                EXPECTED RETURN (OPTIONAL)
+                TIMELINE (OPTIONAL)
               </span>
               <input
                 name="expectedReturn"
-                type="date"
+                placeholder="e.g. 2 weeks, 2-3 weeks, DTD"
                 className="w-full rounded-[10px] border border-navy/20 bg-cream px-3.5 py-3 text-sm text-navy outline-none"
               />
             </label>
@@ -86,10 +86,8 @@ export default async function AdminInjuriesPage() {
                     <span className="truncate text-sm font-bold text-navy">{entry.name}</span>
                     <span className="text-[11px] text-muted">{entry.description}</span>
                     <span className="text-[10px] text-muted">
-                      {entry.expected_return
-                        ? `Back ${formatShortDate(entry.expected_return)}`
-                        : "Return TBD"}{" "}
-                      · out since {formatShortDate(entry.started_at)}
+                      {entry.expected_return || "Timeline TBD"} · out since{" "}
+                      {formatShortDate(entry.started_at)}
                     </span>
                   </div>
                   <form action={clearInjuryAction}>

@@ -33,9 +33,7 @@ export default async function InjuredListPage() {
               </div>
               <span className="text-xs text-muted">{entry.description}</span>
               <span className="text-[10px] font-extrabold tracking-wide text-danger">
-                {entry.expected_return
-                  ? `BACK ${formatShortDate(entry.expected_return).toUpperCase()}`
-                  : "RETURN TBD"}
+                {entry.expected_return ? entry.expected_return.toUpperCase() : "TIMELINE TBD"}
                 <span className="ml-2 font-normal normal-case tracking-normal text-muted">
                   out since {formatShortDate(entry.started_at)}
                 </span>

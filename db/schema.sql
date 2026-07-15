@@ -558,3 +558,7 @@ create table if not exists il_visible_accounts (
   account_id uuid primary key references accounts(id) on delete cascade
 );
 alter table il_visible_accounts enable row level security;
+
+-- Recovery timelines are rarely an exact date ("2 weeks", "2-3 weeks", "DTD"),
+-- so expected_return is free text rather than a calendar date.
+alter table injuries alter column expected_return type text using expected_return::text;
