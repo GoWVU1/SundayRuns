@@ -8,8 +8,9 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { GameFormFields } from "@/components/GameFormFields";
 import { PillSubmitButton } from "@/components/SubmitButton";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { TierBadge } from "@/components/TierBadge";
-import { adminEnrollRsvpAction, updateGameAction } from "@/app/actions/games";
+import { adminEnrollRsvpAction, adminRemoveRsvpAction, updateGameAction } from "@/app/actions/games";
 
 export default async function EditGamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -76,6 +77,18 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
                       </span>
                     )}
                     <TierBadge tier={entry.tier} />
+                    <form action={adminRemoveRsvpAction}>
+                      <input type="hidden" name="gameId" value={game.id} />
+                      <input type="hidden" name="accountId" value={entry.account_id} />
+                      <ConfirmSubmitButton
+                        confirmMessage={`Remove ${entry.name} from this game?`}
+                        pendingLabel="…"
+                        aria-label={`Remove ${entry.name}`}
+                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-danger text-xs font-extrabold text-danger disabled:cursor-wait disabled:opacity-55"
+                      >
+                        ×
+                      </ConfirmSubmitButton>
+                    </form>
                   </div>
                 ))}
               </div>
@@ -98,6 +111,18 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
                         </span>
                       )}
                       <TierBadge tier={entry.tier} />
+                      <form action={adminRemoveRsvpAction}>
+                        <input type="hidden" name="gameId" value={game.id} />
+                        <input type="hidden" name="accountId" value={entry.account_id} />
+                        <ConfirmSubmitButton
+                          confirmMessage={`Remove ${entry.name} from the waitlist?`}
+                          pendingLabel="…"
+                          aria-label={`Remove ${entry.name}`}
+                          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-danger text-xs font-extrabold text-danger disabled:cursor-wait disabled:opacity-55"
+                        >
+                          ×
+                        </ConfirmSubmitButton>
+                      </form>
                     </div>
                   ))}
                 </div>

@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { localInputToUtc } from "@/lib/time";
 import { isRankedTier, type RankedTier } from "@/lib/tiers";
-import { adminEnrollRsvp, type RsvpStatus } from "@/lib/rsvps";
+import { adminEnrollRsvp, adminRemoveRsvp, type RsvpStatus } from "@/lib/rsvps";
+import { sendWaitlistPromotionPush } from "@/lib/push";
 import {
   createGame,
   deleteGame,
+  getGameById,
   setTierUnlockSetting,
   toggleGameOpen,
   updateGame,
@@ -91,6 +94,29 @@ export async function adminEnrollRsvpAction(formData: FormData) {
   revalidatePath(`/admin/games/${gameId}`);
   revalidatePath(`/admin/attendance/${gameId}`);
   revalidateGameScreens();
+}
+
+export async function adminRemoveRsvpAction(formData: FormData) {
+  await requireAdmin();
+  const gameId = String(formData.get("gameId") || "");
+  const accountId = String(formData.get("accountId") || "");
+  if (!gameId || !accountId) return;
+
+  const { promotedAccountId } = await adminRemoveRsvp(gameId, accountId);
+  revalidatePath(`/admin/games/${gameId}`);
+  revalidatePath(`/admin/attendance/${gameId}`);
+  revalidateGameScreens();
+
+  if (promotedAccountId) {
+    const game = await getGameById(gameId);
+    if (game) {
+      after(async () => {
+        await sendWaitlistPromotionPush(promotedAccountId, game).catch((err) =>
+          console.error("Waitlist promotion push failed:", err)
+        );
+      });
+    }
+  }
 }
 
 export async function setTierUnlockSettingAction(formData: FormData) {

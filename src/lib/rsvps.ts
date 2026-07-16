@@ -142,6 +142,33 @@ export async function adminEnrollRsvp(
 
 export type CancelResult = { promotedAccountId: string | null; blocked?: boolean };
 
+/** Deletes the RSVP and, if it was confirmed, promotes the oldest waitlisted account in one statement. */
+async function deleteRsvpAndPromote(
+  tx: TransactionSql,
+  gameId: string,
+  accountId: string
+): Promise<{ promotedAccountId: string | null }> {
+  const [mine] = await tx<{ status: RsvpStatus }[]>`
+    delete from rsvps
+    where game_id = ${gameId} and account_id = ${accountId}
+    returning status
+  `;
+  if (!mine || mine.status !== "confirmed") return { promotedAccountId: null };
+
+  const [promoted] = await tx<{ account_id: string }[]>`
+    update rsvps
+    set status = 'confirmed'
+    where id = (
+      select id from rsvps
+      where game_id = ${gameId} and status = 'waitlisted'
+      order by created_at asc
+      limit 1
+    )
+    returning account_id
+  `;
+  return { promotedAccountId: promoted?.account_id ?? null };
+}
+
 export async function cancelRsvp(gameId: string, accountId: string): Promise<CancelResult> {
   return sql.begin(async (tx) => {
     const [game] = await tx<{ starts_at: string }[]>`
@@ -159,27 +186,17 @@ export async function cancelRsvp(gameId: string, accountId: string): Promise<Can
       return { promotedAccountId: null, blocked: true };
     }
 
-    const [mine] = await tx<{ status: RsvpStatus }[]>`
-      delete from rsvps
-      where game_id = ${gameId} and account_id = ${accountId}
-      returning status
-    `;
-    if (!mine) return { promotedAccountId: null };
+    return deleteRsvpAndPromote(tx, gameId, accountId);
+  });
+}
 
-    if (mine.status !== "confirmed") return { promotedAccountId: null };
-
-    // FIFO promotion in one statement — no select/update round-trip pair.
-    const [promoted] = await tx<{ account_id: string }[]>`
-      update rsvps
-      set status = 'confirmed'
-      where id = (
-        select id from rsvps
-        where game_id = ${gameId} and status = 'waitlisted'
-        order by created_at asc
-        limit 1
-      )
-      returning account_id
-    `;
-    return { promotedAccountId: promoted?.account_id ?? null };
+/** Commissioner recovery path — same FIFO promotion as a self-serve cancel, but never blocked by the 2-hour cutoff. */
+export async function adminRemoveRsvp(
+  gameId: string,
+  accountId: string
+): Promise<{ promotedAccountId: string | null }> {
+  return sql.begin(async (tx) => {
+    await tx`select id from games where id = ${gameId} for update`;
+    return deleteRsvpAndPromote(tx, gameId, accountId);
   });
 }
