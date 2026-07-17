@@ -6,6 +6,7 @@ export function RosterRow({
   num,
   name,
   tier,
+  isGoat = false,
   sponsorName,
   streak = 0,
   isChampion = false,
@@ -14,6 +15,7 @@ export function RosterRow({
   num: number;
   name: string;
   tier: string;
+  isGoat?: boolean;
   sponsorName?: string | null;
   streak?: number;
   isChampion?: boolean;
@@ -32,7 +34,7 @@ export function RosterRow({
         </span>
       )}
       <StreakBadge count={streak} />
-      <TierBadge tier={tier} />
+      <TierBadge tier={tier} isGoat={isGoat} />
       {right}
     </div>
   );

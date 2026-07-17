@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import { requireAccount } from "@/lib/auth";
 import { getGameEditData, getTierUnlockSettings, resolveTierUnlockInputs } from "@/lib/games";
 import { listAccounts } from "@/lib/accounts";
 import { getRoster } from "@/lib/rsvps";
+import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { utcToLocalInput } from "@/lib/time";
 import { getTierLabel } from "@/lib/tiers";
 import { Header } from "@/components/Header";
@@ -14,13 +16,18 @@ import { adminEnrollRsvpAction, adminRemoveRsvpAction, updateGameAction } from "
 
 export default async function EditGamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [{ game, allowlist, tierUnlocks: customUnlocks }, accounts, globalUnlocks, roster] = await Promise.all([
-    getGameEditData(id),
-    listAccounts(),
-    getTierUnlockSettings(),
-    getRoster(id),
-  ]);
+  const [viewer, { game, allowlist, tierUnlocks: customUnlocks }, accounts, globalUnlocks, roster, goatAccountIds] =
+    await Promise.all([
+      requireAccount(),
+      getGameEditData(id),
+      listAccounts(),
+      getTierUnlockSettings(),
+      getRoster(id),
+      getGoatAccountIds(),
+    ]);
   if (!game) notFound();
+  const canSeeGoat = await canViewGoatTags(viewer.id);
+  const goatSet = new Set(goatAccountIds);
 
   const confirmed = roster.filter((r) => r.status === "confirmed");
   const waitlisted = roster.filter((r) => r.status === "waitlisted");
@@ -76,7 +83,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
                         guest of {entry.sponsor_name}
                       </span>
                     )}
-                    <TierBadge tier={entry.tier} />
+                    <TierBadge tier={entry.tier} isGoat={canSeeGoat && goatSet.has(entry.account_id)} />
                     <form action={adminRemoveRsvpAction}>
                       <input type="hidden" name="gameId" value={game.id} />
                       <input type="hidden" name="accountId" value={entry.account_id} />
@@ -110,7 +117,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
                           guest of {entry.sponsor_name}
                         </span>
                       )}
-                      <TierBadge tier={entry.tier} />
+                      <TierBadge tier={entry.tier} isGoat={canSeeGoat && goatSet.has(entry.account_id)} />
                       <form action={adminRemoveRsvpAction}>
                         <input type="hidden" name="gameId" value={game.id} />
                         <input type="hidden" name="accountId" value={entry.account_id} />

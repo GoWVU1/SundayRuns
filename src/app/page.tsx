@@ -6,6 +6,7 @@ import { formatGameDateTime, formatUnlockLabel, isPastCancelCutoff } from "@/lib
 import { TIER_LABELS, isRankedTier } from "@/lib/tiers";
 import { canSponsorGuest } from "@/lib/guests";
 import { getLatestChampionAccountId } from "@/lib/fantasy";
+import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Card } from "@/components/Card";
@@ -22,12 +23,16 @@ import { memberNavItems } from "@/lib/nav";
 export default async function HomePage() {
   const account = await requireAccount();
 
-  const [next, alreadySubscribed, championAccountId, canInvite] = await Promise.all([
+  const [next, alreadySubscribed, championAccountId, canInvite, goatAccountIds, canSeeGoat] = await Promise.all([
     getNextVisibleGame(account),
     hasActiveSubscription(account.id),
     getLatestChampionAccountId(),
     canSponsorGuest(account.tier),
+    getGoatAccountIds(),
+    canViewGoatTags(account.id),
   ]);
+  const goatSet = new Set(goatAccountIds);
+  const isGoatFor = (accountId: string) => canSeeGoat && goatSet.has(accountId);
   const game = next?.game ?? null;
   const isClaimable = next?.isClaimable ?? false;
   const windowOpensAt = next?.windowOpensAt ?? null;
@@ -52,7 +57,7 @@ export default async function HomePage() {
       : null;
 
   const rankedTier = isRankedTier(account.tier) ? account.tier : "extended";
-  const tierLabel = TIER_LABELS[rankedTier];
+  const tierLabel = isGoatFor(account.id) ? "GOAT" : TIER_LABELS[rankedTier];
 
   const isOff = !game || !game.is_open;
   const isWindowLocked = !isOff && !mine && !isClaimable;
@@ -216,6 +221,7 @@ export default async function HomePage() {
                 num={i + 1}
                 name={p.name}
                 tier={p.tier}
+                isGoat={isGoatFor(p.account_id)}
                 sponsorName={p.sponsor_name}
                 streak={streaks.get(p.account_id) ?? 0}
                 isChampion={p.account_id === championAccountId}
@@ -238,6 +244,7 @@ export default async function HomePage() {
                     num={i + 1}
                     name={p.name}
                     tier={p.tier}
+                    isGoat={isGoatFor(p.account_id)}
                     sponsorName={p.sponsor_name}
                     isChampion={p.account_id === championAccountId}
                   />

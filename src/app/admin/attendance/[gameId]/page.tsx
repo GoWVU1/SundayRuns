@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import { requireAccount } from "@/lib/auth";
 import { getGameById } from "@/lib/games";
 import { getAttendanceForGame } from "@/lib/attendance";
+import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -10,8 +12,15 @@ import { markAttendanceAction } from "@/app/actions/attendance";
 
 export default async function AdminAttendancePage({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
-  const [game, roster] = await Promise.all([getGameById(gameId), getAttendanceForGame(gameId)]);
+  const [viewer, game, roster, goatAccountIds] = await Promise.all([
+    requireAccount(),
+    getGameById(gameId),
+    getAttendanceForGame(gameId),
+    getGoatAccountIds(),
+  ]);
   if (!game) notFound();
+  const canSeeGoat = await canViewGoatTags(viewer.id);
+  const goatSet = new Set(goatAccountIds);
 
   return (
     <>
@@ -32,7 +41,7 @@ export default async function AdminAttendancePage({ params }: { params: Promise<
               >
                 <div className="flex flex-1 flex-col gap-1">
                   <span className="text-sm font-bold text-navy">{p.name}</span>
-                  <TierBadge tier={p.tier} className="w-fit" />
+                  <TierBadge tier={p.tier} isGoat={canSeeGoat && goatSet.has(p.account_id)} className="w-fit" />
                 </div>
                 <div className="flex gap-2">
                   <form action={markAttendanceAction}>

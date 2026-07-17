@@ -5,6 +5,7 @@ import { getAccountAttendanceSummary } from "@/lib/attendance";
 import { getGuestsBroughtCount } from "@/lib/guests";
 import { getLatestChampionAccountId } from "@/lib/fantasy";
 import { hasActiveSubscription } from "@/lib/push";
+import { canViewGoatTags, getGoatAccountIds } from "@/lib/goat";
 import { TIER_LABELS, isRankedTier } from "@/lib/tiers";
 import { formatMonthYear } from "@/lib/time";
 import { Header } from "@/components/Header";
@@ -19,18 +20,21 @@ import { logoutAction } from "@/app/actions/auth";
 export default async function AccountPage() {
   const account = await requireAccount();
 
-  const [attendance, guestsBrought, championAccountId, pushSubscribed] =
+  const [attendance, guestsBrought, championAccountId, pushSubscribed, goatAccountIds, canSeeGoat] =
     await Promise.all([
       getAccountAttendanceSummary(account.id, 8),
       getGuestsBroughtCount(account.id),
       getLatestChampionAccountId(),
       hasActiveSubscription(account.id),
+      getGoatAccountIds(),
+      canViewGoatTags(account.id),
     ]);
 
   const { currentStreak: streakCount, gamesPlayed, noShows, recentWeeks } = attendance;
   const isChampion = account.id === championAccountId;
+  const isGoat = canSeeGoat && goatAccountIds.includes(account.id);
   const rankedTier = isRankedTier(account.tier) ? account.tier : "extended";
-  const tierLabel = TIER_LABELS[rankedTier];
+  const tierLabel = isGoat ? "GOAT" : TIER_LABELS[rankedTier];
 
   return (
     <>

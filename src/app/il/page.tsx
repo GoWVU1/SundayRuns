@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAccount } from "@/lib/auth";
 import { getInjuries, canViewIL } from "@/lib/injuries";
+import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { formatShortDate } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -10,7 +11,12 @@ import { memberNavItems } from "@/lib/nav";
 export default async function InjuredListPage() {
   const account = await requireAccount();
   if (!(await canViewIL(account))) redirect("/");
-  const injuries = await getInjuries();
+  const [injuries, goatAccountIds, canSeeGoat] = await Promise.all([
+    getInjuries(),
+    getGoatAccountIds(),
+    canViewGoatTags(account.id),
+  ]);
+  const goatSet = new Set(goatAccountIds);
 
   return (
     <>
@@ -29,7 +35,7 @@ export default async function InjuredListPage() {
             >
               <div className="flex items-center gap-2">
                 <span className="flex-1 truncate text-sm font-bold text-navy">{entry.name}</span>
-                <TierBadge tier={entry.tier} />
+                <TierBadge tier={entry.tier} isGoat={canSeeGoat && goatSet.has(entry.account_id)} />
               </div>
               <span className="text-xs text-muted">{entry.description}</span>
               <span className="text-[10px] font-extrabold tracking-wide text-danger">

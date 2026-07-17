@@ -5,9 +5,11 @@ export type SelectableAccount = { id: string; name: string; tier: string };
 export function AccountMultiSelect({
   members,
   defaultSelectedIds,
+  name = "visibleAccountIds",
 }: {
   members: SelectableAccount[];
   defaultSelectedIds: string[];
+  name?: string;
 }) {
   return (
     <div className="max-h-[220px] overflow-y-auto rounded-2xl border-[1.5px] border-navy/25 bg-card">
@@ -21,7 +23,7 @@ export function AccountMultiSelect({
         >
           <input
             type="checkbox"
-            name="visibleAccountIds"
+            name={name}
             value={m.id}
             defaultChecked={defaultSelectedIds.includes(m.id)}
             className="h-4 w-4 accent-navy"

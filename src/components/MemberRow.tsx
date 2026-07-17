@@ -22,6 +22,7 @@ export type PublicMember = {
   is_admin: boolean;
   tier: string;
   fantasy_member: boolean;
+  isGoat: boolean;
 };
 
 const initialState: ResetPasswordState = {};
@@ -49,7 +50,7 @@ export function MemberRow({
   );
   const [quickPending, startQuickTransition] = useTransition();
   const isLastAdmin = member.is_admin && adminCount <= 1;
-  const tierStatus = getTierLabel(member.tier);
+  const tierStatus = member.isGoat ? "GOAT" : getTierLabel(member.tier);
   const runQuickAction = (action: (fd: FormData) => Promise<void>, fields: Record<string, string>) => {
     startQuickTransition(() => callAction(action, fields));
   };

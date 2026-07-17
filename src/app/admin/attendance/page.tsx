@@ -1,15 +1,21 @@
 import Link from "next/link";
+import { requireAccount } from "@/lib/auth";
 import { getAdminAttendanceStats, getGamesNeedingAttendance } from "@/lib/attendance";
+import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { TierBadge } from "@/components/TierBadge";
 
 export default async function AdminAttendanceStatsPage() {
-  const [stats, needingAttendance] = await Promise.all([
+  const [viewer, stats, needingAttendance, goatAccountIds] = await Promise.all([
+    requireAccount(),
     getAdminAttendanceStats(),
     getGamesNeedingAttendance(),
+    getGoatAccountIds(),
   ]);
+  const canSeeGoat = await canViewGoatTags(viewer.id);
+  const goatSet = new Set(goatAccountIds);
 
   return (
     <>
@@ -37,7 +43,7 @@ export default async function AdminAttendanceStatsPage() {
               <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="truncate text-sm font-bold text-navy">{stat.name}</span>
-                  <TierBadge tier={stat.tier} className="w-fit" />
+                  <TierBadge tier={stat.tier} isGoat={canSeeGoat && goatSet.has(stat.accountId)} className="w-fit" />
                 </div>
                 <div className="text-center">
                   <span className="block font-display text-xl text-gold">{stat.currentStreak}</span>

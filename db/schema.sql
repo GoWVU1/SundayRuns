@@ -562,3 +562,20 @@ alter table il_visible_accounts enable row level security;
 -- Recovery timelines are rarely an exact date ("2 weeks", "2-3 weeks", "DTD"),
 -- so expected_return is free text rather than a calendar date.
 alter table injuries alter column expected_return type text using expected_return::text;
+
+-- ============================================================
+-- Stage K — GOAT tag
+-- ============================================================
+-- A cosmetic override of the tier badge ("GOAT" instead of Rookie/Veteran/
+-- Hall of Fame) for admin-picked accounts. Visibility is a separate
+-- admin-picked list — being tagged does NOT grant a tagged person the
+-- ability to see their own tag; they need to be in goat_visible_accounts too.
+create table if not exists goat_accounts (
+  account_id uuid primary key references accounts(id) on delete cascade
+);
+alter table goat_accounts enable row level security;
+
+create table if not exists goat_visible_accounts (
+  account_id uuid primary key references accounts(id) on delete cascade
+);
+alter table goat_visible_accounts enable row level security;

@@ -111,6 +111,15 @@ export default async function AdminDashboardPage() {
                 {injuries.length === 0 ? "Nobody's out" : `${injuries.length} out right now`}
               </span>
             </Link>
+            <Link
+              href="/admin/goat"
+              prefetch={false}
+              className="flex flex-col gap-2.5 rounded-[14px] border-[1.5px] border-navy/25 bg-card p-3.5"
+            >
+              <div className="h-5 w-5 rounded-full border-[3px] border-gold" />
+              <span className="font-display text-[13px] tracking-wide text-navy">GOAT TAG</span>
+              <span className="text-[10px] text-muted">Who&apos;s tagged, who can see it</span>
+            </Link>
             {account.fantasy_member && (
               <Link
                 href="/admin/fantasy"

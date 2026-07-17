@@ -1,6 +1,7 @@
 import { getSessionAccount } from "@/lib/auth";
 import { listAccounts } from "@/lib/accounts";
 import { getTierGuestAllowances } from "@/lib/guests";
+import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { TIER_ORDER, TIER_LABELS } from "@/lib/tiers";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -9,11 +10,14 @@ import { setTierGuestAllowanceAction } from "@/app/actions/guests";
 import { ActionSubmitButton } from "@/components/SubmitButton";
 
 export default async function AdminMembersPage() {
-  const [account, accounts, allowances] = await Promise.all([
+  const [account, accounts, allowances, goatAccountIds] = await Promise.all([
     getSessionAccount(),
     listAccounts(),
     getTierGuestAllowances(),
+    getGoatAccountIds(),
   ]);
+  const canSeeGoat = account ? await canViewGoatTags(account.id) : false;
+  const goatSet = new Set(goatAccountIds);
 
   // Never let password hashes leave the server boundary.
   const members = accounts.map((a) => ({
@@ -23,6 +27,7 @@ export default async function AdminMembersPage() {
     is_admin: a.is_admin,
     tier: a.tier,
     fantasy_member: a.fantasy_member,
+    isGoat: canSeeGoat && goatSet.has(a.id),
   }));
   const adminCount = accounts.filter((a) => a.is_admin).length;
 
