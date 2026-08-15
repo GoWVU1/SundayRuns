@@ -8,6 +8,7 @@ import {
   setFantasyMemberAction,
   setNicknameAction,
   setTierAction,
+  setTierFloorAction,
   type ResetPasswordState,
   type SetNicknameState,
 } from "@/app/actions/admin";
@@ -23,7 +24,14 @@ export type PublicMember = {
   tier: string;
   fantasy_member: boolean;
   isGoat: boolean;
+  tier_floor: "core" | "regular" | null;
 };
+
+const TIER_FLOOR_OPTIONS: { value: "" | "regular" | "core"; label: string }[] = [
+  { value: "", label: "NONE" },
+  { value: "regular", label: "VETERAN" },
+  { value: "core", label: "HALL OF FAME" },
+];
 
 const initialState: ResetPasswordState = {};
 const initialNicknameState: SetNicknameState = {};
@@ -97,6 +105,34 @@ export function MemberRow({
                 } disabled:cursor-wait disabled:opacity-55`}
               >
                 {TIER_LABELS[tier]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-extrabold tracking-[2px] text-muted">
+            PROTECTED FLOOR
+          </span>
+          <span className="-mt-0.5 text-[10px] text-muted">
+            Auto-demotion from missed weeks will never drop them below this.
+          </span>
+          <div className="flex gap-1.5">
+            {TIER_FLOOR_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={quickPending}
+                onClick={() =>
+                  runQuickAction(setTierFloorAction, { accountId: member.id, tierFloor: opt.value })
+                }
+                className={`flex-1 rounded-full border-[1.5px] py-1.5 text-[10px] font-extrabold tracking-wide ${
+                  (member.tier_floor ?? "") === opt.value
+                    ? "border-navy bg-navy text-cream"
+                    : "border-navy/25 text-navy"
+                } disabled:cursor-wait disabled:opacity-55`}
+              >
+                {opt.label}
               </button>
             ))}
           </div>

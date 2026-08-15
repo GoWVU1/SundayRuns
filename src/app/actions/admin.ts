@@ -12,6 +12,7 @@ import {
   setAccountName,
   setAccountPassword,
   setAccountTier,
+  setAccountTierFloor,
 } from "@/lib/accounts";
 
 export type ResetPasswordState = { error?: string; success?: boolean };
@@ -49,6 +50,15 @@ export async function setTierAction(formData: FormData) {
   await setAccountTier(accountId, tier);
   revalidatePath("/admin/members");
   revalidatePath("/");
+}
+
+export async function setTierFloorAction(formData: FormData) {
+  await requireAdmin();
+  const accountId = String(formData.get("accountId") || "");
+  const tierFloor = String(formData.get("tierFloor") || "");
+  if (tierFloor !== "" && tierFloor !== "core" && tierFloor !== "regular") return;
+  await setAccountTierFloor(accountId, tierFloor === "" ? null : tierFloor);
+  revalidatePath("/admin/members");
 }
 
 export async function setFantasyMemberAction(formData: FormData) {

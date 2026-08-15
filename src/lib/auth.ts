@@ -28,6 +28,18 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
+/**
+ * A valid-format bcrypt hash nobody's real password will ever match, purely so
+ * a login attempt for a phone number that doesn't exist still pays the same
+ * bcrypt.compare cost as one that does — otherwise the response-time gap lets
+ * an attacker tell "no such account" from "wrong password" by timing alone.
+ */
+const TIMING_SAFE_DUMMY_HASH = "$2b$10$nuEanv25Mzi4J9Ab7ngdAOApq5zygrdHva59nLe68BwsJ3RlC6eSG";
+
+export async function verifyPasswordTimingSafe(password: string, hash: string | null | undefined) {
+  return bcrypt.compare(password, hash ?? TIMING_SAFE_DUMMY_HASH);
+}
+
 export async function createSession(accountId: string) {
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   const [session] = await sql<{ id: string }[]>`

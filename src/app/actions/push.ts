@@ -9,6 +9,6 @@ export async function subscribePushAction(subscription: PushSubscriptionJSON) {
 }
 
 export async function unsubscribePushAction(endpoint: string) {
-  await requireAccount();
-  await removeSubscription(endpoint);
+  const account = await requireAccount();
+  await removeSubscription(account.id, endpoint);
 }

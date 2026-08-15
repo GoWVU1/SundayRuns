@@ -28,6 +28,7 @@ export default async function AdminMembersPage() {
     tier: a.tier,
     fantasy_member: a.fantasy_member,
     isGoat: canSeeGoat && goatSet.has(a.id),
+    tier_floor: a.tier_floor,
   }));
   const adminCount = accounts.filter((a) => a.is_admin).length;
 

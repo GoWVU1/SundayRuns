@@ -61,9 +61,13 @@ const REQUEST_FIELDS = `
   g.guest_name, g.guest_phone, g.status, g.requested_at, g.decided_at
 `;
 
+/** Counts guests who actually showed up, not just ones invited — a waitlisted or no-show guest shouldn't inflate this. */
 export async function getGuestsBroughtCount(sponsorAccountId: string): Promise<number> {
   const [{ count }] = await sql<{ count: string }[]>`
-    select count(*)::text from rsvps where sponsor_account_id = ${sponsorAccountId}
+    select count(*)::text
+    from rsvps r
+    join attendance att on att.game_id = r.game_id and att.account_id = r.account_id
+    where r.sponsor_account_id = ${sponsorAccountId} and att.status = 'present'
   `;
   return Number(count);
 }

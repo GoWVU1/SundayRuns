@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/auth";
 import type { RankedTier } from "@/lib/tiers";
 
 export const ACCOUNT_FIELDS =
-  "id, name, first_name, last_name, phone, password_hash, is_admin, tier, fantasy_member, created_at";
+  "id, name, first_name, last_name, phone, password_hash, is_admin, tier, fantasy_member, created_at, tier_floor";
 
 export type Account = {
   id: string;
@@ -18,6 +18,8 @@ export type Account = {
   tier: string;
   fantasy_member: boolean;
   created_at: string;
+  /** Floor an admin has set below which auto-demotion won't drop this account. */
+  tier_floor: "core" | "regular" | null;
 };
 
 export function normalizePhone(raw: string) {
@@ -79,8 +81,17 @@ export async function setAccountAdmin(accountId: string, isAdmin: boolean) {
   await sql`update accounts set is_admin = ${isAdmin} where id = ${accountId}`;
 }
 
+/** Resets tier_changed_at only when the tier actually changes — promotion/demotion clocks reset per rung. */
 export async function setAccountTier(accountId: string, tier: RankedTier) {
-  await sql`update accounts set tier = ${tier} where id = ${accountId}`;
+  await sql`
+    update accounts
+    set tier = ${tier}, tier_changed_at = case when tier <> ${tier} then now() else tier_changed_at end
+    where id = ${accountId}
+  `;
+}
+
+export async function setAccountTierFloor(accountId: string, tierFloor: "core" | "regular" | null) {
+  await sql`update accounts set tier_floor = ${tierFloor} where id = ${accountId}`;
 }
 
 export async function setAccountFantasyMember(accountId: string, fantasyMember: boolean) {

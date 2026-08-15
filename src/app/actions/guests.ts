@@ -29,7 +29,8 @@ export async function submitGuestRequestAction(
   if (!guestName) return { error: "Add the guest's name." };
   if (guestPhone.replace(/\D/g, "").length < 10) return { error: "Add a valid phone number." };
 
-  await assertGameVisible(account, gameId);
+  const { isClaimable } = await assertGameVisible(account, gameId);
+  if (!isClaimable) return { error: "This game isn't open for you to sponsor a guest into yet." };
 
   const { error } = await requestGuestInvite({
     gameId,

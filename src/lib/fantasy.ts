@@ -294,11 +294,20 @@ export async function getOffLimitsPunishments(current: CurrentLoser): Promise<Of
   return offLimits;
 }
 
+/** Re-running this for a year that already has a row (e.g. correcting a typo) starts that
+ * year's punishment cycle over — any prior punishment pick/start/completion is cleared too,
+ * not just the loser's name, so a corrected entry doesn't inherit stale cycle state. */
 export async function startNewLoser(fields: { year: number; displayName: string }): Promise<void> {
   await sql`
     insert into punishment_history (year, loser_display_name, loser_determined_at)
     values (${fields.year}, ${fields.displayName}, now())
-    on conflict (year) do update set loser_display_name = ${fields.displayName}, loser_determined_at = now()
+    on conflict (year) do update
+      set loser_display_name = excluded.loser_display_name,
+          loser_determined_at = excluded.loser_determined_at,
+          loser_account_id = null,
+          punishment = null,
+          started_at = null,
+          completed_at = null
   `;
 }
 

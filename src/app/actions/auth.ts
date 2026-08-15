@@ -8,7 +8,7 @@ import {
   setAccountPassword,
   setAccountTier,
 } from "@/lib/accounts";
-import { createSession, destroySession, verifyPassword } from "@/lib/auth";
+import { createSession, destroySession, verifyPassword, verifyPasswordTimingSafe } from "@/lib/auth";
 
 export type AuthFormState = { error?: string };
 
@@ -54,10 +54,12 @@ export async function loginAction(
   const password = String(formData.get("password") || "");
 
   const account = await findAccountByPhone(phone);
-  if (!account || !account.password_hash) return { error: "No account found for that phone number." };
-
-  const valid = await verifyPassword(password, account.password_hash);
-  if (!valid) return { error: "Wrong password." };
+  // Always run a bcrypt compare, real or dummy, so a nonexistent phone number
+  // doesn't respond measurably faster than a wrong password for a real one.
+  const valid = await verifyPasswordTimingSafe(password, account?.password_hash);
+  if (!account || !account.password_hash || !valid) {
+    return { error: !account ? "No account found for that phone number." : "Wrong password." };
+  }
 
   await createSession(account.id);
   redirect("/");

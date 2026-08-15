@@ -27,8 +27,9 @@ export async function saveSubscription(accountId: string, subscription: PushSubs
   `;
 }
 
-export async function removeSubscription(endpoint: string): Promise<void> {
-  await sql`delete from push_subscriptions where endpoint = ${endpoint}`;
+/** Scoped to accountId so one account can't delete another's subscription by guessing/observing its endpoint. */
+export async function removeSubscription(accountId: string, endpoint: string): Promise<void> {
+  await sql`delete from push_subscriptions where account_id = ${accountId} and endpoint = ${endpoint}`;
 }
 
 export async function hasActiveSubscription(accountId: string): Promise<boolean> {

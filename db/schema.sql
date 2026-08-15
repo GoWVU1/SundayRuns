@@ -634,3 +634,16 @@ begin
     execute 'alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated';
   end if;
 end $$;
+
+-- ============================================================
+-- Stage M — Automatic tier promotion/demotion + protected floor
+-- ============================================================
+-- tier_changed_at resets whenever tier changes (manually or automatically) —
+-- promotion/demotion thresholds count qualifying weeks since THAT point, not
+-- all-time attendance, so each rung requires its own fresh run.
+alter table accounts add column if not exists tier_changed_at timestamptz not null default now();
+
+-- Admin-set floor a person's tier can never be auto-demoted below. NULL means
+-- no protection. 'extended' is deliberately not a valid value — it's already
+-- the bottom tier, so a floor there would be a no-op.
+alter table accounts add column if not exists tier_floor text check (tier_floor in ('core', 'regular'));

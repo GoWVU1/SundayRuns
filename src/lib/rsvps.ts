@@ -2,6 +2,7 @@ import "server-only";
 import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
 import { isPastCancelCutoff } from "@/lib/time";
+import { getAttendanceMetrics } from "@/lib/attendance";
 
 export type RsvpStatus = "confirmed" | "waitlisted";
 
@@ -32,47 +33,9 @@ export async function getRosterWithStreaks(gameId: string): Promise<{
   roster: RosterEntry[];
   streaks: Map<string, number>;
 }> {
-  const rows = await sql<(RosterEntry & { streak: number })[]>`
-    with roster as (
-      select r.id, r.account_id, a.name, a.tier, r.status, s.name as sponsor_name, r.created_at
-      from rsvps r
-      join accounts a on a.id = r.account_id
-      left join accounts s on s.id = r.sponsor_account_id
-      where r.game_id = ${gameId}
-    ),
-    history_ranked as (
-      select
-        att.account_id,
-        att.status,
-        row_number() over (partition by att.account_id order by g.starts_at desc) as sequence_number
-      from attendance att
-      join games g on g.id = att.game_id
-      where att.account_id in (select account_id from roster where status = 'confirmed')
-        and g.visibility = 'standard'
-    ),
-    history_with_break as (
-      select
-        account_id,
-        status,
-        sequence_number,
-        min(sequence_number) filter (where status = 'no_show') over (partition by account_id) as first_no_show
-      from history_ranked
-    ),
-    streaks as (
-      select account_id, count(*)::int as streak
-      from history_with_break
-      where status = 'present' and (first_no_show is null or sequence_number < first_no_show)
-      group by account_id
-    )
-    select roster.*, coalesce(streaks.streak, 0)::int as streak
-    from roster
-    left join streaks on streaks.account_id = roster.account_id
-    order by roster.created_at asc
-  `;
-  return {
-    roster: rows.map(({ streak: _streak, ...entry }) => entry),
-    streaks: new Map(rows.map((row) => [row.account_id, row.streak])),
-  };
+  const [roster, metrics] = await Promise.all([getRoster(gameId), getAttendanceMetrics()]);
+  const streaks = new Map(roster.map((r) => [r.account_id, metrics.get(r.account_id)?.streak ?? 0]));
+  return { roster, streaks };
 }
 
 export type ClaimResult = { status: RsvpStatus };

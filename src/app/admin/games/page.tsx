@@ -76,6 +76,13 @@ export default async function AdminGamesListPage() {
                 >
                   EDIT
                 </Link>
+                <Link
+                  href={`/admin/attendance/${g.id}`}
+                  prefetch={false}
+                  className="flex-1 rounded-full border border-navy/25 py-2 text-center text-[11px] font-extrabold tracking-wide text-navy"
+                >
+                  ATTENDANCE
+                </Link>
                 <form action={deleteGameAction}>
                   <input type="hidden" name="gameId" value={g.id} />
                   <ConfirmSubmitButton

@@ -1,22 +1,24 @@
 import { notFound } from "next/navigation";
 import { requireAccount } from "@/lib/auth";
 import { getGameById } from "@/lib/games";
-import { getAttendanceForGame } from "@/lib/attendance";
+import { getAttendanceForGame, getAttendanceMetrics } from "@/lib/attendance";
 import { getGoatAccountIds, canViewGoatTags } from "@/lib/goat";
 import { formatGameDateTime } from "@/lib/time";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { TierBadge } from "@/components/TierBadge";
+import { StreakBadge } from "@/components/StreakBadge";
 import { ActionSubmitButton } from "@/components/SubmitButton";
 import { markAttendanceAction } from "@/app/actions/attendance";
 
 export default async function AdminAttendancePage({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
-  const [viewer, game, roster, goatAccountIds] = await Promise.all([
+  const [viewer, game, roster, goatAccountIds, metrics] = await Promise.all([
     requireAccount(),
     getGameById(gameId),
     getAttendanceForGame(gameId),
     getGoatAccountIds(),
+    getAttendanceMetrics(),
   ]);
   if (!game) notFound();
   const canSeeGoat = await canViewGoatTags(viewer.id);
@@ -41,7 +43,10 @@ export default async function AdminAttendancePage({ params }: { params: Promise<
               >
                 <div className="flex flex-1 flex-col gap-1">
                   <span className="text-sm font-bold text-navy">{p.name}</span>
-                  <TierBadge tier={p.tier} isGoat={canSeeGoat && goatSet.has(p.account_id)} className="w-fit" />
+                  <div className="flex items-center gap-1.5">
+                    <TierBadge tier={p.tier} isGoat={canSeeGoat && goatSet.has(p.account_id)} className="w-fit" />
+                    <StreakBadge count={metrics.get(p.account_id)?.streak ?? 0} />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <form action={markAttendanceAction}>
