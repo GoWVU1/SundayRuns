@@ -579,3 +579,58 @@ create table if not exists goat_visible_accounts (
   account_id uuid primary key references accounts(id) on delete cascade
 );
 alter table goat_visible_accounts enable row level security;
+
+-- ============================================================
+-- Stage L — Security: lock down Supabase's anon/authenticated roles
+-- ============================================================
+-- Supabase grants the "anon" and "authenticated" roles full read/write on
+-- every public-schema table by default and expects RLS policies to restrict
+-- that. This app never uses Supabase Auth/PostgREST — it's a Next.js server
+-- talking to Postgres directly via a role that bypasses RLS — so anon and
+-- authenticated have zero legitimate use here. Prior tables in this schema
+-- were created without RLS, leaving accounts/sessions/rsvps/etc. fully
+-- readable and writable by anyone holding the project's anon key (which
+-- Supabase's own security model treats as non-secret). Revoking directly
+-- also matters because TRUNCATE isn't governed by RLS policies at all.
+--
+-- Guarded behind role-existence checks: local dev runs against plain
+-- Postgres, which has neither role, and schema.sql must stay runnable there.
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    execute 'revoke all on all tables in schema public from anon';
+    execute 'revoke all on all sequences in schema public from anon';
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'revoke all on all tables in schema public from authenticated';
+    execute 'revoke all on all sequences in schema public from authenticated';
+  end if;
+end $$;
+
+alter table accounts enable row level security;
+alter table sessions enable row level security;
+alter table games enable row level security;
+alter table rsvps enable row level security;
+alter table attendance enable row level security;
+alter table push_subscriptions enable row level security;
+alter table fantasy_standings enable row level security;
+alter table fantasy_dues enable row level security;
+alter table fantasy_contract_articles enable row level security;
+alter table punishment_history enable row level security;
+alter table guest_requests enable row level security;
+alter table game_templates enable row level security;
+alter table game_visible_accounts enable row level security;
+alter table game_visible_tiers enable row level security;
+alter table tier_guest_settings enable row level security;
+
+-- Without this, every table this app creates going forward re-inherits the
+-- same anon/authenticated grants automatically, silently reopening the hole.
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'postgres')
+     and exists (select 1 from pg_roles where rolname = 'anon')
+     and exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated';
+    execute 'alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated';
+  end if;
+end $$;
