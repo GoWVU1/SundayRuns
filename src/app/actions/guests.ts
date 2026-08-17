@@ -27,7 +27,6 @@ export async function submitGuestRequestAction(
   const guestName = String(formData.get("guestName") || "").trim();
   const guestPhone = String(formData.get("guestPhone") || "").trim();
   if (!guestName) return { error: "Add the guest's name." };
-  if (guestPhone.replace(/\D/g, "").length < 10) return { error: "Add a valid phone number." };
 
   const { isClaimable } = await assertGameVisible(account, gameId);
   if (!isClaimable) return { error: "This game isn't open for you to sponsor a guest into yet." };

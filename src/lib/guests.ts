@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { randomUUID } from "node:crypto";
 import type { TransactionSql } from "postgres";
 import { sql } from "@/lib/db";
 import { normalizePhone } from "@/lib/accounts";
@@ -128,6 +129,7 @@ export async function requestGuestInvite(fields: {
   gameId: string;
   sponsorAccountId: string;
   guestName: string;
+  /** Optional — most guests never give the sponsor a number, and none is required to play. */
   guestPhone: string;
 }): Promise<{ error?: string }> {
   const { remaining } = await getMonthlyGuestAllowanceStatus(fields.sponsorAccountId);
@@ -140,15 +142,27 @@ export async function requestGuestInvite(fields: {
   return {};
 }
 
-/** Finds an existing account by phone (any tier — a "guest" may already be a real member), or creates a fresh guest account. */
+/**
+ * Finds an existing GUEST-tier account by phone (a repeat guest, invited before), or creates a
+ * fresh one. The match is deliberately scoped to tier = 'guest' — matching any tier would let a
+ * phone number that happens to belong to a real member (the sponsor's own, say, or a typo)
+ * silently reuse that member's account instead of adding a new roster entry, which surfaces as
+ * "the guest never got added" with no error at all. When no phone was given, skips the lookup
+ * entirely and always creates a new account with a synthetic placeholder — `accounts.phone` is
+ * unique and not null, so a blank number can't be stored as-is without colliding.
+ */
 async function findOrCreateGuestAccount(tx: TransactionSql, name: string, phone: string): Promise<string> {
   const normalized = normalizePhone(phone);
-  const [existing] = await tx<{ id: string }[]>`select id from accounts where phone = ${normalized}`;
-  if (existing) return existing.id;
+  if (normalized) {
+    const [existing] = await tx<{ id: string }[]>`
+      select id from accounts where phone = ${normalized} and tier = 'guest'
+    `;
+    if (existing) return existing.id;
+  }
 
   const [created] = await tx<{ id: string }[]>`
     insert into accounts (name, phone, tier)
-    values (${name}, ${normalized}, 'guest')
+    values (${name}, ${normalized || `guest-${randomUUID()}`}, 'guest')
     returning id
   `;
   return created.id;

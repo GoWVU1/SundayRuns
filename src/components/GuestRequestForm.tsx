@@ -25,7 +25,7 @@ export function GuestRequestForm({ gameId, remaining }: { gameId: string; remain
       <input type="hidden" name="gameId" value={gameId} />
       <Field label="GUEST'S NAME" name="guestName" placeholder="e.g. Terrence H." disabled={outOfInvites} />
       <Field
-        label="GUEST'S PHONE"
+        label="GUEST'S PHONE (OPTIONAL)"
         name="guestPhone"
         type="tel"
         placeholder="(555) 000-0000"

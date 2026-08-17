@@ -33,7 +33,8 @@ export default async function AdminGuestsPage() {
                 </span>
               </div>
               <span className="text-xs leading-relaxed text-muted">
-                Sponsored by <strong className="text-navy">{r.sponsor_name}</strong> · {r.guest_phone}
+                Sponsored by <strong className="text-navy">{r.sponsor_name}</strong>
+                {r.guest_phone && ` · ${r.guest_phone}`}
                 <br />
                 Requested {formatGameDateTime(r.requested_at)}
               </span>
